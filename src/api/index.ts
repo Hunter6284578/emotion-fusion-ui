@@ -2,8 +2,8 @@
 
 import type { FusionResult, AssessmentRecord, StatisticsData } from '../types'
 
-// Vercel 部署时通过环境变量配置后端地址，本地开发用 /api 代理
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+// 部署时通过环境变量配置后端地址，默认指向 HF Space
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://cagedsheep-emotion-fusion-api.hf.space'
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${url}`, {

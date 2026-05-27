@@ -83,22 +83,48 @@ function analyzeText(text: string): Record<string, unknown> {
     };
   }
 
-  // 关键词提取
+  // 关键词提取 - 中文用子串扫描（不分词，直接全文匹配）
   const keywords: string[] = [];
   let posCount = 0, negCount = 0, highA = 0, lowA = 0, depCount = 0;
-  let intensity = 0.0;
   let intensityMod = 0;
 
-  const words = clean.split(/\s+/);
-  for (const w of words) {
-    if (POSITIVE.has(w)) { posCount++; keywords.push(w); }
-    if (NEGATIVE.has(w)) { negCount++; keywords.push(w); }
-    if (HIGH_AROUSAL.has(w)) { highA++; keywords.push(w); }
-    if (LOW_AROUSAL.has(w)) { lowA++; keywords.push(w); }
-    if (DEPRESSION.has(w)) { depCount++; keywords.push(w); }
-    if (INTENSIFIERS.has(w)) intensityMod += 2;
-    if (DAMPENERS.has(w)) intensityMod -= 1;
+  function matchKeyword(kwSet: Set<string>, text: string): string[] {
+    const found: string[] = [];
+    for (const kw of kwSet) {
+      if (text.includes(kw)) found.push(kw);
+    }
+    return found;
   }
+
+  // 先找修饰词（影响全局）
+  for (const kw of INTENSIFIERS) { if (clean.includes(kw)) intensityMod += 2; }
+  for (const kw of DAMPENERS) { if (clean.includes(kw)) intensityMod -= 1; }
+
+  // 正向词
+  const posFound = matchKeyword(POSITIVE, clean);
+  posCount = posFound.length;
+  keywords.push(...posFound);
+
+  // 负向词
+  const negFound = matchKeyword(NEGATIVE, clean);
+  negCount = negFound.length;
+  keywords.push(...negFound);
+
+  // 高唤醒
+  const highFound = matchKeyword(HIGH_AROUSAL, clean);
+  highA = highFound.length;
+  // 避免重复
+  for (const w of highFound) { if (!keywords.includes(w)) keywords.push(w); }
+
+  // 低唤醒
+  const lowFound = matchKeyword(LOW_AROUSAL, clean);
+  lowA = lowFound.length;
+  for (const w of lowFound) { if (!keywords.includes(w)) keywords.push(w); }
+
+  // 抑郁
+  const depFound = matchKeyword(DEPRESSION, clean);
+  depCount = depFound.length;
+  for (const w of depFound) { if (!keywords.includes(w)) keywords.push(w); }
 
   // 判断情绪
   let emotion = '平静';
@@ -113,7 +139,7 @@ function analyzeText(text: string): Record<string, unknown> {
 
   // 计算 VA
   const baseVA = EMOTION_VA[emotion] || { valence: 0.5, arousal: 0.5 };
-  intensity = 0.5 + (intensityMod * 0.05);
+  const intensity = 0.5 + (intensityMod * 0.05);
 
   // 调整
   let valence = baseVA.valence;

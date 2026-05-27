@@ -16,11 +16,26 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 
 // ====== 情绪分析 ======
 export async function analyzeEmotion(formData: FormData): Promise<FusionResult> {
+  // 检测是否包含文件
+  const hasFiles = formData.get('face_file') || formData.get('speech_file') || formData.get('ecg_csv_file')
+  
+  if (!hasFiles) {
+    // 纯文本分析 → 用 JSON 避免跨域 FormData 编码问题
+    const res = await fetch(`${API_BASE}/analyze_json`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: formData.get('text') || '' }),
+    })
+    if (!res.ok) throw new Error(`API Error: ${res.status}`)
+    return res.json()
+  }
+  
+  // 包含文件 → FormData
   const res = await fetch(`${API_BASE}/analyze`, {
     method: 'POST',
     body: formData,
   })
-  if (!res.ok) throw new Error(`API Error: ${res.status} ${res.statusText}`)
+  if (!res.ok) throw new Error(`API Error: ${res.status}`)
   return res.json()
 }
 

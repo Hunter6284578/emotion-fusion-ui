@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #0EA5E9;
+  --primary-dark: #0369A1;
+  --secondary: #06B6D4;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  
+  /* Emotion colors */
+  --emotion-happy: #22C55E;
+  --emotion-calm: #3B82F6;
+  --emotion-sad: #6366F1;
+  --emotion-angry: #EF4444;
+  --emotion-fear: #F97316;
+  --emotion-surprised: #A855F7;
+  --emotion-disgust: #78716C;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background-color: #f8fafc;
+  color: #1e293b;
+  line-height: 1.6;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* VA Space quadrant backgrounds */
+.va-quadrant-tl { fill: rgba(239, 68, 68, 0.08); }   /* fear */
+.va-quadrant-tr { fill: rgba(34, 197, 94, 0.08); }    /* happy */
+.va-quadrant-bl { fill: rgba(99, 102, 241, 0.08); }    /* sad */
+.va-quadrant-br { fill: rgba(59, 130, 246, 0.08); }    /* calm */
+
+/* Animations */
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out forwards;
+}

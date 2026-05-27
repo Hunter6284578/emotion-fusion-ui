@@ -218,6 +218,12 @@ function fuse(results: Record<string, unknown>[]): Record<string, unknown> {
   }
 
   // 加权平均
+  // 收集调试信息
+  const debugInfo: Record<string, unknown> = {};
+  for (const r of results) {
+    if (r._debug) debugInfo[r.modality as string] = r._debug;
+  }
+
   let totalWeight = 0;
   let weightedV = 0, weightedA = 0, weightedConf = 0;
   for (const r of available) {
@@ -260,6 +266,7 @@ function fuse(results: Record<string, unknown>[]): Record<string, unknown> {
     uncertainty_score: ucScore,
     suggestion,
     fusion_mode: 'vercel_lite_v1',
+    _debug: debugInfo,
   };
 }
 

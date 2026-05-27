@@ -169,7 +169,6 @@ function analyzeText(text: string): Record<string, unknown> {
     confidence: Math.round(confidence * 10000) / 10000,
     quality: Math.round(quality * 10000) / 10000,
     evidence: keywords.length > 0 ? keywords.slice(0, 8) : ['关键词分析'],
-    _debug: { clean, posCount, negCount, highA, lowA, depCount, intensityMod, keywordCount: keywords.length, keywords },
     warning: null,
     error_code: null,
     raw: { label: sentiment, score: confidence, mode: 'vercel_keyword' },
@@ -218,12 +217,6 @@ function fuse(results: Record<string, unknown>[]): Record<string, unknown> {
   }
 
   // 加权平均
-  // 收集调试信息
-  const debugInfo: Record<string, unknown> = {};
-  for (const r of results) {
-    if (r._debug) debugInfo[r.modality as string] = r._debug;
-  }
-
   let totalWeight = 0;
   let weightedV = 0, weightedA = 0, weightedConf = 0;
   for (const r of available) {
@@ -266,7 +259,6 @@ function fuse(results: Record<string, unknown>[]): Record<string, unknown> {
     uncertainty_score: ucScore,
     suggestion,
     fusion_mode: 'vercel_lite_v1',
-    _debug: debugInfo,
   };
 }
 

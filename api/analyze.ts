@@ -169,6 +169,7 @@ function analyzeText(text: string): Record<string, unknown> {
     confidence: Math.round(confidence * 10000) / 10000,
     quality: Math.round(quality * 10000) / 10000,
     evidence: keywords.length > 0 ? keywords.slice(0, 8) : ['关键词分析'],
+    _debug: { clean, posCount, negCount, highA, lowA, depCount, intensityMod, keywordCount: keywords.length, keywords },
     warning: null,
     error_code: null,
     raw: { label: sentiment, score: confidence, mode: 'vercel_keyword' },

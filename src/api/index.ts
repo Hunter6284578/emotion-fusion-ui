@@ -1,6 +1,8 @@
-/** API 层 - 连接后端服务，支持 Vercel 部署 + 本地开发降级 */
+/** API 层 - 连接后端服务，支持 Vercel 部署 + 本地开发降级
+ *  v3.0 临床级升级：视频流API + 精确时间戳打标 + AU特征
+ */
 
-import type { FusionResult, AssessmentRecord, StatisticsData } from '../types'
+import type { FusionResult, AssessmentRecord, StatisticsData, VideoStreamResult, FaceAUResult } from '../types'
 
 // 部署时通过环境变量配置后端地址，默认指向 HF Space
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://cagedsheep-emotion-fusion-api.hf.space'
@@ -21,7 +23,7 @@ export async function analyzeEmotion(formData: FormData): Promise<FusionResult> 
   
   if (!hasFiles) {
     // 纯文本分析 → 用 JSON 避免跨域 FormData 编码问题
-    const res = await fetch(`${API_BASE}/analyze_json`, {
+    const res = await fetch(`${API_BASE}/api/analyze_json`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: formData.get('text') || '' }),
@@ -31,11 +33,60 @@ export async function analyzeEmotion(formData: FormData): Promise<FusionResult> 
   }
   
   // 包含文件 → FormData
-  const res = await fetch(`${API_BASE}/analyze`, {
+  const res = await fetch(`${API_BASE}/api/analyze`, {
     method: 'POST',
     body: formData,
   })
   if (!res.ok) throw new Error(`API Error: ${res.status}`)
+  return res.json()
+}
+
+// ====== v3.0 临床级视频流分析 ======
+
+/**
+ * 发送视频流切片（MediaRecorder录制的.webm blob）进行时序情绪分析
+ * 采集频率: 25 FPS滑动窗口，每次1~2秒视频切片
+ * 后端管线: MTCNN面部仿射对齐 → 3D-CNN/MobileNetV2时空特征提取 → AU解码 → 张量融合
+ */
+export async function analyzeVideoStream(
+  videoBlob: Blob,
+  metadata: {
+    fps: number
+    frameCount: number
+    durationMs: number
+    startTimestamp: number  // 毫秒级Unix时间戳，用于跨模态对齐
+    windowIndex: number
+  }
+): Promise<VideoStreamResult> {
+  const formData = new FormData()
+  formData.append('video_clip', videoBlob, `clip_${metadata.windowIndex}.webm`)
+  formData.append('metadata', JSON.stringify(metadata))
+  
+  const res = await fetch(`${API_BASE}/api/analyze_video_stream`, {
+    method: 'POST',
+    body: formData,
+  })
+  if (!res.ok) throw new Error(`Video Stream API Error: ${res.status}`)
+  return res.json()
+}
+
+/**
+ * 发送单帧进行快速AU检测（轻量级模式，用于实时预览）
+ * 前端使用MediaPipe提取面部关键点后发送裁剪对齐的人脸
+ */
+export async function analyzeFaceAU(
+  faceBlob: Blob,
+  timestamp: number
+): Promise<FaceAUResult> {
+  const formData = new FormData()
+  formData.append('face_image', faceBlob, 'face.jpg')
+  formData.append('timestamp', String(timestamp))
+  
+  const res = await fetch(`${API_BASE}/api/analyze_face_au`, {
+    method: 'POST',
+    body: formData,
+  })
+  if (!res.ok) throw new Error(`Face AU API Error: ${res.status}`)
   return res.json()
 }
 
@@ -50,7 +101,7 @@ export async function fetchAssessments(params?: {
   
   // 兼容后端返回格式 (records, total) 或直接返回数组
   const data = await request<AssessmentRecord[] | { records: AssessmentRecord[]; total: number }>(
-    `/assessments${query}`
+    `/api/assessments${query}`
   )
   
   if (Array.isArray(data)) return { records: data, total: data.length }
@@ -59,16 +110,16 @@ export async function fetchAssessments(params?: {
 
 // ====== 统计信息 ======
 export async function fetchStatistics(): Promise<StatisticsData> {
-  return request<StatisticsData>('/statistics')
+  return request<StatisticsData>('/api/statistics')
 }
 
 // ====== 数据导出 ======
 export function exportCSV(params?: Record<string, string>): void {
   const search = new URLSearchParams(params).toString()
-  window.open(`${API_BASE}/export/csv${search ? '?' + search : ''}`, '_blank')
+  window.open(`${API_BASE}/api/export/csv${search ? '?' + search : ''}`, '_blank')
 }
 
 export function exportJSON(params?: Record<string, string>): void {
   const search = new URLSearchParams(params).toString()
-  window.open(`${API_BASE}/export/json${search ? '?' + search : ''}`, '_blank')
+  window.open(`${API_BASE}/api/export/json${search ? '?' + search : ''}`, '_blank')
 }

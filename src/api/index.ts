@@ -68,7 +68,15 @@ export async function analyzeVideoStream(
     method: 'POST',
     body: formData,
   })
-  if (!res.ok) throw new Error(`Video Stream API Error: ${res.status}`)
+  if (!res.ok) {
+    try {
+      const errJson = await res.json()
+      if (errJson && errJson.error) {
+        throw new Error(errJson.error)
+      }
+    } catch (_) {}
+    throw new Error(`Video Stream API Error: ${res.status}`)
+  }
   return res.json()
 }
 

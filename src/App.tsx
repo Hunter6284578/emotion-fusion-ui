@@ -1,17 +1,15 @@
 import { Routes, Route, NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, User, Clock, Settings as SettingsIcon,
-  Activity, Brain, Camera,
+  Activity, Brain
 } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import History from './pages/History'
 import Settings from './pages/Settings'
-import CameraRealtime from './pages/CameraRealtime'
 
 const NAV_ITEMS = [
   { to: '/', icon: LayoutDashboard, label: '诊断工作台' },
-  { to: '/camera', icon: Camera, label: '实时摄像头' },
   { to: '/profile', icon: User, label: '患者档案' },
   { to: '/history', icon: Clock, label: '历史记录' },
   { to: '/settings', icon: SettingsIcon, label: '系统设置' },
@@ -67,7 +65,6 @@ export default function App() {
       <main className="flex-1 overflow-auto">
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/camera" element={<CameraRealtime />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/history" element={<History />} />
           <Route path="/settings" element={<Settings />} />

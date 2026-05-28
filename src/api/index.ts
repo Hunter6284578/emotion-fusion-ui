@@ -4,8 +4,10 @@
 
 import type { FusionResult, AssessmentRecord, StatisticsData, VideoStreamResult, FaceAUResult } from '../types'
 
-// 部署时通过环境变量配置后端地址，默认指向 HF Space
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://cagedsheep-emotion-fusion-api.hf.space'
+// 部署时通过环境变量配置后端地址
+// 生产环境(Vercel)使用相对路径，由 vercel.json rewrite 代理到 HF Space
+// 本地开发由 .env.development 设置 VITE_API_BASE_URL=http://localhost:8088
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${url}`, {

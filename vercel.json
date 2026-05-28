@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://cagedsheep-emotion-fusion-api.hf.space/api/:path*"
+    },
+    {
       "source": "/((?!api).*)",
       "destination": "/index.html"
     }

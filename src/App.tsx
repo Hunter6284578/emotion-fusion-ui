@@ -19,17 +19,17 @@ const NAV_ITEMS = [
 
 export default function App() {
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-screen bg-[#F3F6F8]">
       {/* Sidebar */}
-      <aside className="w-60 bg-slate-900 text-white flex flex-col shrink-0">
-        <div className="px-5 py-5 border-b border-slate-700">
-          <div className="flex items-center gap-2.5">
+      <aside className="w-64 bg-white border-r border-slate-200 text-slate-700 flex flex-col shrink-0 z-10">
+        <div className="px-6 py-6 border-b border-slate-100">
+          <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center">
               <Brain size={20} />
             </div>
             <div>
-              <h1 className="text-sm font-bold leading-tight">多模态情绪识别</h1>
-              <p className="text-[11px] text-slate-400">Fusion Engine v3.0</p>
+              <h1 className="text-[15px] font-bold text-slate-800 leading-tight">多模态情绪分析</h1>
+              <p className="text-xs text-slate-500 font-medium">临床辅助系统 v3.0</p>
             </div>
           </div>
         </div>
@@ -41,10 +41,10 @@ export default function App() {
               to={to}
               end={to === '/'}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-[13px] font-medium transition-colors ${
+                `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
                 }`
               }
             >
@@ -54,11 +54,11 @@ export default function App() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-700">
-          <div className="flex items-center gap-3 px-1">
-            <Activity size={16} className="text-emerald-400" />
-            <span className="text-xs text-slate-400">后端已连接</span>
-            <span className="ml-auto w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <div className="p-5 border-t border-slate-100 bg-slate-50/50">
+          <div className="flex items-center gap-3 px-2">
+            <Activity size={16} className="text-teal-500" />
+            <span className="text-xs font-medium text-slate-500">已连接后端服务</span>
+            <span className="ml-auto w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
           </div>
         </div>
       </aside>

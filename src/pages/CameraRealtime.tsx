@@ -429,6 +429,13 @@ export default function CameraRealtime() {
     frameCountRef.current = 0
     lastFrameTimeRef.current = Date.now()
 
+    // 定时在窗口时长（1.5秒）后停止录制，从而触发 onstop 执行分析并循环到下一个分片
+    setTimeout(() => {
+      if (recorder.state === 'recording') {
+        recorder.stop()
+      }
+    }, VIDEO_CONFIG.windowDurationMs)
+
     // FPS 计数器
     if (fpsIntervalRef.current) clearInterval(fpsIntervalRef.current)
     fpsIntervalRef.current = setInterval(() => {

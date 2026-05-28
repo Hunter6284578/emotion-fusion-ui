@@ -87,6 +87,30 @@ export const EMOTION_CONFIG: Record<EmotionLabel, { color: string; va: [number, 
   'unknown': { color: '#94A3B8', va: [0.50, 0.50], label: 'Unknown' },
 }
 
+export const EMOTION_EN_TO_ZH: Record<string, EmotionLabel> = {
+  'happy': '快乐',
+  'calm': '平静',
+  'neutral': '平静',
+  'sad': '悲伤',
+  'angry': '生气',
+  'fear': '害怕',
+  'surprise': '惊讶',
+  'surprised': '惊讶',
+  'disgust': '厌恶',
+  'disgusted': '厌恶',
+  'unknown': 'unknown'
+}
+
+export function translateEmotion(en: string | undefined | null): EmotionLabel {
+  if (!en) return 'unknown'
+  const key = en.trim().toLowerCase()
+  // If it's already a known Chinese label
+  if (EMOTION_CONFIG[en as EmotionLabel] && en !== 'unknown') {
+    return en as EmotionLabel
+  }
+  return EMOTION_EN_TO_ZH[key] || 'unknown'
+}
+
 // ============================================================
 // v3.0 临床级视频流分析类型
 // ============================================================

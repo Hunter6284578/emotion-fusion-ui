@@ -3,6 +3,7 @@
  */
 
 import type { FusionResult, AssessmentRecord, StatisticsData, VideoStreamResult, FaceAUResult } from '../types'
+import { translateEmotion } from '../types'
 
 // 部署时通过环境变量配置后端地址
 // 生产环境(Vercel)使用相对路径，由 vercel.json rewrite 代理到 HF Space
@@ -31,7 +32,12 @@ export async function analyzeEmotion(formData: FormData): Promise<FusionResult> 
       body: JSON.stringify({ text: formData.get('text') || '' }),
     })
     if (!res.ok) throw new Error(`API Error: ${res.status}`)
-    return res.json()
+    const data: FusionResult = await res.json()
+    data.final_emotion = translateEmotion(data.final_emotion)
+    if (data.modality_table) {
+      data.modality_table.forEach(m => m.emotion = translateEmotion(m.emotion))
+    }
+    return data
   }
   
   // 包含文件 → FormData
@@ -40,7 +46,13 @@ export async function analyzeEmotion(formData: FormData): Promise<FusionResult> 
     body: formData,
   })
   if (!res.ok) throw new Error(`API Error: ${res.status}`)
-  return res.json()
+  
+  const data: FusionResult = await res.json()
+  data.final_emotion = translateEmotion(data.final_emotion)
+  if (data.modality_table) {
+    data.modality_table.forEach(m => m.emotion = translateEmotion(m.emotion))
+  }
+  return data
 }
 
 // ====== v3.0 临床级视频流分析 ======
@@ -77,7 +89,20 @@ export async function analyzeVideoStream(
     } catch (_) {}
     throw new Error(`Video Stream API Error: ${res.status}`)
   }
-  return res.json()
+  
+  const data: VideoStreamResult = await res.json()
+  data.final_emotion = translateEmotion(data.final_emotion)
+  if (data.micro_expression_events) {
+    data.micro_expression_events.forEach(ev => {
+      ev.emotion = translateEmotion(ev.emotion)
+    })
+  }
+  if (data.frame_details) {
+    data.frame_details.forEach(fd => {
+      fd.emotion = translateEmotion(fd.emotion)
+    })
+  }
+  return data
 }
 
 /**
@@ -97,7 +122,10 @@ export async function analyzeFaceAU(
     body: formData,
   })
   if (!res.ok) throw new Error(`Face AU API Error: ${res.status}`)
-  return res.json()
+  
+  const data: FaceAUResult = await res.json()
+  data.emotion = translateEmotion(data.emotion)
+  return data
 }
 
 // ====== 历史记录 ======
@@ -114,13 +142,28 @@ export async function fetchAssessments(params?: {
     `/api/assessments${query}`
   )
   
-  if (Array.isArray(data)) return { records: data, total: data.length }
+  if (Array.isArray(data)) {
+    data.forEach(r => r.final_emotion = translateEmotion(r.final_emotion))
+    return { records: data, total: data.length }
+  }
+  if (data.records) {
+    data.records.forEach(r => r.final_emotion = translateEmotion(r.final_emotion))
+  }
   return data
 }
 
 // ====== 统计信息 ======
 export async function fetchStatistics(): Promise<StatisticsData> {
-  return request<StatisticsData>('/api/statistics')
+  const data = await request<StatisticsData>('/api/statistics')
+  if (data.emotion_distribution) {
+    const newDist: Record<string, number> = {}
+    for (const [k, v] of Object.entries(data.emotion_distribution)) {
+      const zhKey = translateEmotion(k)
+      newDist[zhKey] = (newDist[zhKey] || 0) + v
+    }
+    data.emotion_distribution = newDist
+  }
+  return data
 }
 
 // ====== 数据导出 ======

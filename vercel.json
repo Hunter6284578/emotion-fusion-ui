@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://cagedsheep-emotion-fusion-api.hf.space/api/:path*"
+      "destination": "https://dhjsd-emotion-fusion-api.hf.space/api/:path*"
     },
     {
       "source": "/((?!api).*)",

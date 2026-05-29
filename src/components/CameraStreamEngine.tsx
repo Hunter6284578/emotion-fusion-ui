@@ -94,7 +94,7 @@ export default function CameraStreamEngine({ isSessionActive }: CameraStreamEngi
       const windowIdx = windowIndexRef.current++
       const currentStartTs = recordingStartRef.current
 
-      if (blob.size < 1000) {
+      if (blob.size < 500) {
         scheduleNextWindow()
         return
       }

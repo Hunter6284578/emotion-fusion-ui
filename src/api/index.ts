@@ -2,7 +2,7 @@
  *  v3.0 临床级升级：视频流API + 精确时间戳打标 + AU特征
  */
 
-import type { FusionResult, AssessmentRecord, StatisticsData, VideoStreamResult, FaceAUResult } from '../types'
+import type { FusionResult, AssessmentRecord, StatisticsData, FaceAUResult } from '../types'
 import { translateEmotion } from '../types'
 
 // 部署时通过环境变量配置后端地址
@@ -55,54 +55,16 @@ export async function analyzeEmotion(formData: FormData): Promise<FusionResult> 
   return data
 }
 
-// ====== v3.0 临床级视频流分析 ======
-
-/**
- * 发送视频流切片（MediaRecorder录制的.webm blob）进行时序情绪分析
- * 采集频率: 25 FPS滑动窗口，每次1~2秒视频切片
- * 后端管线: MTCNN面部仿射对齐 → 3D-CNN/MobileNetV2时空特征提取 → AU解码 → 张量融合
- */
-export async function analyzeVideoStream(
-  videoBlob: Blob,
-  metadata: {
-    fps: number
-    frameCount: number
-    durationMs: number
-    startTimestamp: number  // 毫秒级Unix时间戳，用于跨模态对齐
-    windowIndex: number
+// ====== v3.1 WebSocket 实时长连接 URL 获取 ======
+export function getWebSocketURL(): string {
+  const apiBase = import.meta.env.VITE_API_BASE_URL
+  if (apiBase) {
+    const wsProto = apiBase.startsWith('https') ? 'wss:' : 'ws:'
+    const cleanUrl = apiBase.replace(/^https?:\/\//, '')
+    return `${wsProto}//${cleanUrl}/ws/api/live_analyze`
   }
-): Promise<VideoStreamResult> {
-  const formData = new FormData()
-  formData.append('video_clip', videoBlob, `clip_${metadata.windowIndex}.webm`)
-  formData.append('metadata', JSON.stringify(metadata))
-  
-  const res = await fetch(`${API_BASE}/api/analyze_video_stream`, {
-    method: 'POST',
-    body: formData,
-  })
-  if (!res.ok) {
-    try {
-      const errJson = await res.json()
-      if (errJson && errJson.error) {
-        throw new Error(errJson.error)
-      }
-    } catch (_) {}
-    throw new Error(`Video Stream API Error: ${res.status}`)
-  }
-  
-  const data: VideoStreamResult = await res.json()
-  data.final_emotion = translateEmotion(data.final_emotion)
-  if (data.micro_expression_events) {
-    data.micro_expression_events.forEach(ev => {
-      ev.emotion = translateEmotion(ev.emotion)
-    })
-  }
-  if (data.frame_details) {
-    data.frame_details.forEach(fd => {
-      fd.emotion = translateEmotion(fd.emotion)
-    })
-  }
-  return data
+  // 生产环境 Vercel 降级/重定向：因为 Vercel Rewrite 无法处理 WebSocket，直连 Hugging Face Space
+  return 'wss://dhjsd-emotion-fusion-api.hf.space/ws/api/live_analyze'
 }
 
 /**

@@ -235,3 +235,43 @@ export interface VideoWindowConfig {
 
 /** 摄像头实时分析状态 */
 export type CameraStatus = 'idle' | 'starting' | 'streaming' | 'analyzing' | 'error'
+
+// ============================================================
+// v3.1 实时双模态 WebSocket 全双工流式分析类型
+// ============================================================
+
+export interface AudioStreamResult {
+  available: boolean
+  timestamp: number
+  duration_ms: number
+  emotion: string
+  valence: number
+  arousal: number
+  confidence: number
+  features: {
+    pitch_mean: number
+    energy_mean: number
+    hnr_mean: number
+    mfcc_mean: number[]
+  }
+}
+
+export type WSConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error'
+
+export interface FusedStreamPacket {
+  timestamp: number
+  status: {
+    video: 'active' | 'inactive'
+    audio: 'active' | 'inactive'
+    prolf: 'active' | 'phantom' | 'disconnected'
+  }
+  align_stats: {
+    buffer_len_video: number
+    buffer_len_audio: number
+    alignment_rate: number
+  }
+  raw_video?: VideoStreamResult
+  raw_audio?: AudioStreamResult
+  fused: FusionResult
+}
+

@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Camera, CameraOff, Play, EyeOff, Eye } from 'lucide-react'
-import type { VideoStreamResult, CameraStatus, VideoWindowConfig } from '../types'
-import { analyzeVideoStream } from '../api'
+import { Camera, EyeOff, Eye } from 'lucide-react'
+import type { VideoWindowConfig } from '../types'
+import { useWebSocket } from '../hooks/useWebSocketBus'
 
 const VIDEO_CONFIG: VideoWindowConfig = {
   fps: 25,
@@ -10,11 +10,12 @@ const VIDEO_CONFIG: VideoWindowConfig = {
 }
 
 interface CameraStreamEngineProps {
-  onAnalysisResult: (result: VideoStreamResult) => void;
+  isSessionActive: boolean
 }
 
-export default function CameraStreamEngine({ onAnalysisResult }: CameraStreamEngineProps) {
-  const [status, setStatus] = useState<CameraStatus>('idle')
+export default function CameraStreamEngine({ isSessionActive }: CameraStreamEngineProps) {
+  const { sendVideo } = useWebSocket()
+  const [status, setStatus] = useState<'idle' | 'starting' | 'streaming' | 'error'>('idle')
   const [showPreview, setShowPreview] = useState(true)
 
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -86,11 +87,10 @@ export default function CameraStreamEngine({ onAnalysisResult }: CameraStreamEng
       if (e.data.size > 0) chunksRef.current.push(e.data)
     }
 
-    recorder.onstop = async () => {
+    recorder.onstop = () => {
       if (!isActiveRef.current) return
 
       const blob = new Blob(chunksRef.current, { type: mimeType })
-      const durationMs = Date.now() - recordingStartRef.current
       const windowIdx = windowIndexRef.current++
       const currentStartTs = recordingStartRef.current
 
@@ -99,21 +99,10 @@ export default function CameraStreamEngine({ onAnalysisResult }: CameraStreamEng
         return
       }
 
-      const metadata = {
-        fps: VIDEO_CONFIG.fps,
-        frameCount: frameCountRef.current,
-        durationMs,
-        startTimestamp: currentStartTs,
-        windowIndex: windowIdx,
-      }
-
       try {
-        const result = await analyzeVideoStream(blob, metadata)
-        // Important: ensure result has the start_timestamp we recorded when it started
-        result.start_timestamp = currentStartTs
-        onAnalysisResult(result)
+        sendVideo(blob, currentStartTs, windowIdx)
       } catch (err) {
-        console.error('Video analysis failed:', err)
+        console.error('Video stream send failed:', err)
       }
 
       scheduleNextWindow()
@@ -127,7 +116,7 @@ export default function CameraStreamEngine({ onAnalysisResult }: CameraStreamEng
         recorder.stop()
       }
     }, VIDEO_CONFIG.windowDurationMs)
-  }, [onAnalysisResult])
+  }, [sendVideo])
 
   const scheduleNextWindow = useCallback(() => {
     if (!isActiveRef.current) return
@@ -147,6 +136,14 @@ export default function CameraStreamEngine({ onAnalysisResult }: CameraStreamEng
     animId = requestAnimationFrame(countFrames)
     return () => cancelAnimationFrame(animId)
   }, [status])
+
+  useEffect(() => {
+    if (isSessionActive) {
+      startCamera()
+    } else {
+      stopCamera()
+    }
+  }, [isSessionActive, startCamera, stopCamera])
 
   useEffect(() => {
     return () => {
@@ -191,17 +188,14 @@ export default function CameraStreamEngine({ onAnalysisResult }: CameraStreamEng
         )}
       </div>
 
-      <div className="p-3 bg-white">
-        <button
-          onClick={status === 'idle' ? startCamera : stopCamera}
-          className={`w-full py-2 rounded-xl text-[12px] font-bold flex items-center justify-center gap-1.5 transition-all ${
-            status === 'idle'
-              ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'
-              : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
-          }`}
-        >
-          {status === 'idle' ? <><Play size={14} /> 开启全流采集</> : <><CameraOff size={14} /> 停止观察</>}
-        </button>
+      <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+        <span>视觉捕捉状态:</span>
+        <span className={status === 'streaming' ? 'text-teal-600 font-bold' : 'text-slate-400'}>
+          {status === 'idle' && '未激活'}
+          {status === 'starting' && '启动中...'}
+          {status === 'streaming' && '实时帧采集 (25 FPS)'}
+          {status === 'error' && '摄像头故障'}
+        </span>
       </div>
     </div>
   )

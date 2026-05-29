@@ -1,13 +1,13 @@
-import { useState, forwardRef, useImperativeHandle, useMemo } from 'react'
+import { useState, forwardRef, useImperativeHandle, useMemo, useCallback } from 'react'
 import {
   XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, ReferenceDot, AreaChart, Area
 } from 'recharts'
 import { Activity, AlertTriangle, FileText } from 'lucide-react'
-import type { VideoStreamResult, MicroExpressionEvent, EmotionLabel } from '../types'
+import type { EmotionLabel, MicroExpressionEvent } from '../types'
 import { EMOTION_CONFIG } from '../types'
 
 export interface QuietMonitorPanelRef {
-  appendStreamResult: (result: VideoStreamResult) => void;
+  appendFusedPacket: (packet: any) => void;
   setStaticFusionResult: (result: any) => void;
   clear: () => void;
 }
@@ -22,34 +22,47 @@ export interface MergedTimelinePoint {
 }
 
 const QuietMonitorPanel = forwardRef<QuietMonitorPanelRef>((_, ref) => {
-  // We keep timeline data in local state so only this panel re-renders when data arrives
   const [timeline, setTimeline] = useState<MergedTimelinePoint[]>([])
   const [staticResult, setStaticResult] = useState<any | null>(null)
+  const [prolfStatus, setProlfStatus] = useState<{ face: string; speech: string; ecg: string }>({
+    face: 'disconnected',
+    speech: 'disconnected',
+    ecg: 'disconnected'
+  })
   
   useImperativeHandle(ref, () => ({
-    appendStreamResult: (result: VideoStreamResult) => {
+    appendFusedPacket: (packet: any) => {
+      // 1. Update ProLF status
+      if (packet.prolf_status) {
+        setProlfStatus(packet.prolf_status)
+      } else if (packet.status) {
+        setProlfStatus(packet.status)
+      }
+      
+      // If it's a heartbeat, do not add a point to the chart timeline
+      if (packet.type === 'heartbeat') {
+        return
+      }
+
+      // 2. Append new fusion point
       setTimeline(prev => {
-        // Construct new points
         const newPoint: MergedTimelinePoint = {
-          timestamp: result.start_timestamp,
-          displayTime: new Date(result.start_timestamp).toLocaleTimeString('zh-CN', { hour12: false }),
-          valence: result.valence_mean || 0,
-          arousal: result.arousal_mean || 0,
-          emotion: (result.final_emotion as EmotionLabel) || 'unknown',
+          timestamp: packet.timestamp,
+          displayTime: new Date(packet.timestamp).toLocaleTimeString('zh-CN', { hour12: false }),
+          valence: packet.valence,
+          arousal: packet.arousal,
+          emotion: (packet.emotion as EmotionLabel) || 'unknown',
         }
         
-        // Find if there's a micro-expression in this window
-        if (result.micro_expression_events?.length > 0) {
-          // Sort by intensity and pick the top one to show as a hover dot
-          const topME = [...result.micro_expression_events].sort((a, b) => b.peak_intensity - a.peak_intensity)[0]
+        if (packet.micro_expression_events?.length > 0) {
+          const topME = [...packet.micro_expression_events].sort((a, b) => b.duration_ms - a.duration_ms)[0]
           newPoint.microExpression = topME
         }
 
         const newTimeline = [...prev, newPoint]
-        // Resolve out-of-order execution by sorting
         newTimeline.sort((a, b) => a.timestamp - b.timestamp)
         
-        // Keep last 60 points (approx 1.5 minutes if 1.5s slice)
+        // Keep last 60 points (~1.5 minutes)
         return newTimeline.slice(-60)
       })
     },
@@ -59,6 +72,7 @@ const QuietMonitorPanel = forwardRef<QuietMonitorPanelRef>((_, ref) => {
     clear: () => {
       setTimeline([])
       setStaticResult(null)
+      setProlfStatus({ face: 'disconnected', speech: 'disconnected', ecg: 'disconnected' })
     }
   }))
 
@@ -67,29 +81,72 @@ const QuietMonitorPanel = forwardRef<QuietMonitorPanelRef>((_, ref) => {
     ? (EMOTION_CONFIG[latestPoint.emotion] || EMOTION_CONFIG['unknown'])
     : null
 
-  // Collect points with micro-expressions for ReferenceDots
   const mePoints = useMemo(() => {
     return timeline.filter(p => p.microExpression)
   }, [timeline])
 
+  const renderStatusPill = useCallback((name: string, status: string) => {
+    let bgClass = 'bg-slate-100 text-slate-500 border-slate-200'
+    let dotClass = 'bg-slate-400'
+    let label = 'Disconnected'
+
+    if (status === 'active') {
+      bgClass = 'bg-emerald-50 text-emerald-700 border-emerald-200'
+      dotClass = 'bg-emerald-500'
+      label = 'Active'
+    } else if (status === 'phantom') {
+      bgClass = 'bg-amber-50 text-amber-700 border-amber-200'
+      dotClass = 'bg-amber-500'
+      label = 'Phantom'
+    }
+
+    return (
+      <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-semibold transition-all ${bgClass}`}>
+        <span className="relative flex h-1.5 w-1.5">
+          {status === 'active' && (
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          )}
+          {status === 'phantom' && (
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+          )}
+          <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${dotClass}`}></span>
+        </span>
+        <span>{name}: {label}</span>
+      </div>
+    )
+  }, [])
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col h-full">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Activity size={16} className="text-teal-500" />
-          <h3 className="text-[13px] font-bold text-slate-700">实时情绪微波监控</h3>
+      {/* Header with ProLF state indicator */}
+      <div className="flex flex-col gap-3 mb-4 pb-3 border-b border-slate-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Activity size={16} className="text-teal-500 animate-pulse" />
+            <h3 className="text-[13px] font-bold text-slate-700">实时端到端融合监控</h3>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-slate-400">情感反馈:</span>
+            <div 
+              className="w-2.5 h-2.5 rounded-full shadow-sm transition-colors duration-1000" 
+              style={{ 
+                backgroundColor: currentEmotionCfg?.color || '#e2e8f0',
+                boxShadow: currentEmotionCfg ? `0 0 8px ${currentEmotionCfg.color}80` : 'none'
+              }}
+            />
+            {latestPoint && (
+              <span className="text-[11px] font-bold text-slate-700">{latestPoint.emotion}</span>
+            )}
+          </div>
         </div>
-        
-        {/* Soft breathing indicator instead of jumping text */}
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] text-slate-400">系统感知状态</span>
-          <div 
-            className="w-2.5 h-2.5 rounded-full shadow-sm transition-colors duration-1000" 
-            style={{ 
-              backgroundColor: currentEmotionCfg?.color || '#e2e8f0',
-              boxShadow: currentEmotionCfg ? `0 0 8px ${currentEmotionCfg.color}80` : 'none'
-            }}
-          />
+
+        {/* ProLF Status Indicator Capsule Lights */}
+        <div className="flex items-center gap-2 text-[10px] bg-slate-50 p-1.5 rounded-xl border border-slate-100 flex-wrap">
+          <span className="text-[10px] text-slate-400 font-semibold mr-1">ProLF 状态感知:</span>
+          {renderStatusPill('Face', prolfStatus.face)}
+          {renderStatusPill('Speech', prolfStatus.speech)}
+          {renderStatusPill('ECG', prolfStatus.ecg)}
         </div>
       </div>
 
@@ -97,7 +154,7 @@ const QuietMonitorPanel = forwardRef<QuietMonitorPanelRef>((_, ref) => {
         <div className="flex-1 flex flex-col items-center justify-center text-slate-300">
           <FileText size={48} className="mb-4 opacity-30" />
           <p className="text-[13px] font-medium">暂无监控数据</p>
-          <p className="text-[11px] mt-1">在左侧开启录制后，此区域将以静默方式绘制分析折线</p>
+          <p className="text-[11px] mt-1">在页面顶部开启监测，即可实时观测情绪多模态融合微波</p>
         </div>
       ) : (
         <div className="flex-1 flex flex-col gap-5">
@@ -125,8 +182,9 @@ const QuietMonitorPanel = forwardRef<QuietMonitorPanelRef>((_, ref) => {
                     return (
                       <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-lg px-3 py-2 shadow-xl">
                         <div className="text-[11px] font-bold text-slate-700 mb-1">{d.displayTime}</div>
-                        <div className="text-[10px] text-blue-600">V: {d.valence.toFixed(2)}</div>
-                        <div className="text-[10px] text-amber-600">A: {d.arousal.toFixed(2)}</div>
+                        <div className="text-[10px] text-blue-600">愉悦度 (Valence): {d.valence.toFixed(2)}</div>
+                        <div className="text-[10px] text-amber-600">唤醒度 (Arousal): {d.arousal.toFixed(2)}</div>
+                        <div className="text-[10px] text-teal-600">融合情绪: {d.emotion}</div>
                         {d.microExpression && (
                           <div className="mt-2 pt-2 border-t border-slate-100 max-w-[150px]">
                             <div className="text-[10px] font-bold text-red-500 mb-0.5 flex items-center gap-1">

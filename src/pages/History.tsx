@@ -256,9 +256,13 @@ export default function History() {
                         </span>
                       </td>
                       <td className="p-3">
-                        <span className="font-mono text-xs">V{record.valence.toFixed(2)}</span>
+                        <span className="font-mono text-xs">
+                          {record.valence !== null && record.valence !== undefined ? `V${record.valence.toFixed(2)}` : 'V-'}
+                        </span>
                         <span className="text-slate-300"> / </span>
-                        <span className="font-mono text-xs">A{record.arousal.toFixed(2)}</span>
+                        <span className="font-mono text-xs">
+                          {record.arousal !== null && record.arousal !== undefined ? `A${record.arousal.toFixed(2)}` : 'A-'}
+                        </span>
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-2">

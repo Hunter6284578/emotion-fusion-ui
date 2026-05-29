@@ -78,8 +78,8 @@ export default function Profile() {
   const nextPatient = () => setSelectedPatient(PATIENTS[(currentIdx + 1) % PATIENTS.length])
 
   const riskCfg = RISK_CONFIG[selectedPatient.risk]
-  const avgValence = timeline.length > 0 ? timeline.reduce((s, t) => s + t.valence, 0) / timeline.length : 0
-  const avgArousal = timeline.length > 0 ? timeline.reduce((s, t) => s + t.arousal, 0) / timeline.length : 0
+  const avgValence = timeline.length > 0 ? timeline.reduce((s, t) => s + (t.valence ?? 0.5), 0) / timeline.length : 0
+  const avgArousal = timeline.length > 0 ? timeline.reduce((s, t) => s + (t.arousal ?? 0.5), 0) / timeline.length : 0
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-5">
@@ -225,22 +225,26 @@ export default function Profile() {
                       <div
                         className="h-full rounded-full transition-all"
                         style={{
-                          width: `${point.valence * 100}%`,
+                          width: `${(point.valence ?? 0.5) * 100}%`,
                           backgroundColor: point.valence > 0.55 ? '#22C55E' : '#EF4444',
                         }}
                       />
                     </div>
-                    <span className="text-xs text-slate-400 w-10">V:{point.valence.toFixed(2)}</span>
+                    <span className="text-xs text-slate-400 w-10">
+                      {point.valence !== null && point.valence !== undefined ? `V:${point.valence.toFixed(2)}` : 'V:-'}
+                    </span>
                     <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all"
                         style={{
-                          width: `${point.arousal * 100}%`,
+                          width: `${(point.arousal ?? 0.5) * 100}%`,
                           backgroundColor: '#8B5CF6',
                         }}
                       />
                     </div>
-                    <span className="text-xs text-slate-400 w-10">A:{point.arousal.toFixed(2)}</span>
+                    <span className="text-xs text-slate-400 w-10">
+                      {point.arousal !== null && point.arousal !== undefined ? `A:${point.arousal.toFixed(2)}` : 'A:-'}
+                    </span>
                   </div>
                   <span className="text-xs text-slate-400 w-32 text-right shrink-0">
                     {new Date(point.timestamp).toLocaleString('zh-CN')}

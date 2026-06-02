@@ -1,7 +1,7 @@
 import { useState, forwardRef, useImperativeHandle } from 'react'
 import { FileText } from 'lucide-react'
 
-const QUICK_PHRASES = ['今天感觉不错', '有些焦虑', '没什么精神', '心情很糟糕', '还好，和平时一样', '患者表现出防御性', '回避关键问题']
+const QUICK_PHRASES = ['今天感觉不错', '有些焦虑', '没什么精神', '心情很糟糕', '还好，和平时一样', '受检长者表现出防御性', '回避关键问题']
 
 export interface ClinicalNoteEditorRef {
   getText: () => string;
@@ -25,7 +25,7 @@ const ClinicalNoteEditor = forwardRef<ClinicalNoteEditorRef>((_, ref) => {
       <textarea 
         value={text} 
         onChange={e => setText(e.target.value)}
-        placeholder="在此记录患者的主诉内容与您的临床观察。此处的输入独立于监控系统，保证流畅无卡顿..."
+        placeholder="在此记录受检长者的主诉内容与您的临床观察。此处的输入独立于监控系统，保证流畅无卡顿..."
         className="flex-1 w-full p-4 text-[13px] rounded-xl border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none resize-none transition-all leading-relaxed bg-slate-50/50 focus:bg-white"
       />
       <div className="mt-4 flex flex-wrap gap-1.5">

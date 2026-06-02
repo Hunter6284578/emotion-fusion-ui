@@ -71,3 +71,8 @@ body {
 .animate-fade-in-up {
   animation: fade-in-up 0.3s ease-out forwards;
 }
+
+.text-yellow-750 {
+  color: #b45309;
+}
+

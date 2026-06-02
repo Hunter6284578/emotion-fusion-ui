@@ -9,6 +9,9 @@ interface WebSocketContextType {
   disconnect: () => void
   sendVideo: (blob: Blob, timestamp: number, windowIndex: number) => void
   sendAudio: (blob: Blob, timestamp: number, windowIndex: number) => void
+  sendEEG: (data: number[][], timestamp: number, channels?: string[], impedance?: number[]) => void
+  sendGSR: (data: number[], timestamp: number) => void
+  sendJSON: (data: any) => void
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null)
@@ -121,6 +124,34 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     ws.send(blob)
   }, [])
 
+  const sendEEG = useCallback((data: number[][], timestamp: number, channels?: string[], impedance?: number[]) => {
+    const ws = wsRef.current
+    if (!ws || ws.readyState !== WebSocket.OPEN) return
+    ws.send(JSON.stringify({
+      type: 'eeg',
+      client_timestamp: timestamp,
+      data,
+      channels,
+      impedance
+    }))
+  }, [])
+
+  const sendGSR = useCallback((data: number[], timestamp: number) => {
+    const ws = wsRef.current
+    if (!ws || ws.readyState !== WebSocket.OPEN) return
+    ws.send(JSON.stringify({
+      type: 'gsr',
+      client_timestamp: timestamp,
+      data
+    }))
+  }, [])
+
+  const sendJSON = useCallback((data: any) => {
+    const ws = wsRef.current
+    if (!ws || ws.readyState !== WebSocket.OPEN) return
+    ws.send(JSON.stringify(data))
+  }, [])
+
   useEffect(() => {
     return () => {
       isIntentionalDisconnectRef.current = true
@@ -140,7 +171,10 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       connect,
       disconnect,
       sendVideo,
-      sendAudio
+      sendAudio,
+      sendEEG,
+      sendGSR,
+      sendJSON
     }}>
       {children}
     </WebSocketContext.Provider>

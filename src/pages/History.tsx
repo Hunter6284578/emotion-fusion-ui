@@ -28,7 +28,9 @@ function generateMockRecords(n = 30): AssessmentRecord[] {
     speech_result: i % 3 === 1 ? '语音正常' : null,
     face_result: i % 3 === 2 ? '表情自然' : null,
     ecg_result: null,
-    final_emotion: emotions[i % emotions.length],
+    final_emotion: i % 5 === 0 
+      ? `Cognitive: ${['healthy', 'scd_risk', 'mci_risk', 'dementia_risk'][i % 4]}` as any
+      : emotions[i % emotions.length],
     valence: 0.2 + Math.random() * 0.65,
     arousal: 0.2 + Math.random() * 0.6,
     confidence: 0.6 + Math.random() * 0.35,
@@ -141,7 +143,7 @@ export default function History() {
       {/* Stats Cards */}
       <div className="grid grid-cols-4 gap-4">
         <StatCard icon={FileText} label="总记录数" value={filtered.length} color="blue" />
-        <StatCard icon={Users} label="患者数" value={uniquePatients.length} color="violet" />
+        <StatCard icon={Users} label="受检长者数" value={uniquePatients.length} color="violet" />
         <StatCard icon={Calendar} label="今日评估" value={filtered.filter(r => r.timestamp.startsWith('2026-05-26')).length} color="emerald" />
         <StatCard icon={AlertCircle} label="高不确定性" value={filtered.filter(r => r.uncertainty_level === 'high').length} color="red" />
       </div>
@@ -155,7 +157,7 @@ export default function History() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="搜索患者姓名 / ID / 情绪..."
+                placeholder="搜索受检长者姓名 / ID / 情绪..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
@@ -183,7 +185,7 @@ export default function History() {
               </select>
               <select value={filterPatient} onChange={e => setFilterPatient(e.target.value)}
                 className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20">
-                <option value="all">全部患者</option>
+                <option value="all">全部受检长者</option>
                 {uniquePatients.map(([id, name]) => (
                   <option key={id} value={id}>{name} ({id})</option>
                 ))}
@@ -220,7 +222,7 @@ export default function History() {
                       </button>
                     </th>
                     <th className="p-3 text-left font-medium text-slate-600">时间</th>
-                    <th className="p-3 text-left font-medium text-slate-600">患者</th>
+                    <th className="p-3 text-left font-medium text-slate-600">受检长者</th>
                     <th className="p-3 text-left font-medium text-slate-600">情绪</th>
                     <th className="p-3 text-left font-medium text-slate-600">VA</th>
                     <th className="p-3 text-left font-medium text-slate-600">置信度</th>
@@ -245,16 +247,42 @@ export default function History() {
                         <span className="text-xs text-slate-400 ml-1">({record.patient_id})</span>
                       </td>
                       <td className="p-3">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
-                          style={{
-                            backgroundColor: `${EMOTION_CONFIG[record.final_emotion]?.color || '#94A3B8'}15`,
-                            color: EMOTION_CONFIG[record.final_emotion]?.color || '#64748B',
-                          }}>
-                          <span className="w-1.5 h-1.5 rounded-full"
-                            style={{ backgroundColor: EMOTION_CONFIG[record.final_emotion]?.color }} />
-                          {record.final_emotion}
-                        </span>
+                        {(() => {
+                          let label = record.final_emotion
+                          let color = '#94A3B8'
+                          if (record.final_emotion.startsWith('Cognitive:')) {
+                            const sub = record.final_emotion.replace('Cognitive: ', '')
+                            if (sub === 'healthy') {
+                              label = '脑活力优良' as any
+                              color = '#10b981'
+                            } else if (sub === 'scd_risk') {
+                              label = '存在主观认知疲劳' as any
+                              color = '#eab308'
+                            } else if (sub === 'mci_risk') {
+                              label = '认知功能轻度减退' as any
+                              color = '#f97316'
+                            } else {
+                              label = '建议寻求专科评估' as any
+                              color = '#f43f5e'
+                            }
+                          } else {
+                            color = EMOTION_CONFIG[record.final_emotion]?.color || '#94A3B8'
+                          }
+                          
+                          return (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium"
+                              style={{
+                                backgroundColor: `${color}15`,
+                                color: color,
+                              }}>
+                              <span className="w-1.5 h-1.5 rounded-full"
+                                style={{ backgroundColor: color }} />
+                              {label}
+                            </span>
+                          )
+                        })()}
                       </td>
+
                       <td className="p-3">
                         <span className="font-mono text-xs">
                           {record.valence !== null && record.valence !== undefined ? `V${record.valence.toFixed(2)}` : 'V-'}

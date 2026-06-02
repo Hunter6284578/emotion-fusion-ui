@@ -63,8 +63,10 @@ export function getWebSocketURL(): string {
     const cleanUrl = apiBase.replace(/^https?:\/\//, '')
     return `${wsProto}//${cleanUrl}/ws/api/live_analyze`
   }
-  // 生产环境 Vercel 降级/重定向：因为 Vercel Rewrite 无法处理 WebSocket，直连 Hugging Face Space
-  return 'wss://dhjsd-emotion-fusion-api.hf.space/ws/api/live_analyze'
+  
+  // 如果 apiBase 为空，说明使用的是 Nginx 同域反向代理
+  const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${wsProto}//${window.location.host}/ws/api/live_analyze`
 }
 
 /**
@@ -137,4 +139,26 @@ export function exportCSV(params?: Record<string, string>): void {
 export function exportJSON(params?: Record<string, string>): void {
   const search = new URLSearchParams(params).toString()
   window.open(`${API_BASE}/api/export/json${search ? '?' + search : ''}`, '_blank')
+}
+
+// ====== 受检长者管理 ======
+export interface Patient {
+  id: string
+  name: string
+  age: number
+  gender: string
+  education: string
+  diagnosis?: string
+  mock_type?: string
+}
+
+export async function fetchPatients(): Promise<Patient[]> {
+  return request<Patient[]>('/api/patients')
+}
+
+export async function addPatient(patient: Patient): Promise<{ ok: boolean; id: string }> {
+  return request<{ ok: boolean; id: string }>('/api/patients', {
+    method: 'POST',
+    body: JSON.stringify(patient),
+  })
 }

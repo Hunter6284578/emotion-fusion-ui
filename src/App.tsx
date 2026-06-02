@@ -11,7 +11,7 @@ import { WebSocketProvider, useWebSocket } from './hooks/useWebSocketBus'
 
 const NAV_ITEMS = [
   { to: '/', icon: LayoutDashboard, label: '诊断工作台' },
-  { to: '/profile', icon: User, label: '患者档案' },
+  { to: '/profile', icon: User, label: '受检长者档案' },
   { to: '/history', icon: Clock, label: '历史记录' },
   { to: '/settings', icon: SettingsIcon, label: '系统设置' },
 ] as const

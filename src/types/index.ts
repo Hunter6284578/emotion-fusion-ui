@@ -2,7 +2,27 @@
  *  临床级升级：视频流分析、面部动作单元(AU)、时序对齐时间戳
  */
 
-export type ModalityType = 'text' | 'speech' | 'face' | 'ecg'
+export type ModalityType = 'text' | 'speech' | 'face' | 'ecg' | 'eeg' | 'gsr' | 'gaze'
+
+export interface SensorStatus {
+  connected: boolean
+  sqi_score: number | null // [0, 1]
+  impedance?: number       // kΩ (EEG/GSR)
+  signal_quality: 'good' | 'fair' | 'poor' | 'disconnected'
+}
+
+export interface HardwareHealthStatus {
+  camera: SensorStatus
+  microphone: SensorStatus
+  ecg_patch: SensorStatus
+  eeg_cap: SensorStatus
+  gsr_ring: SensorStatus
+  routing_mode?: {
+    mode: string
+    name: string
+    description: string
+  }
+}
 
 export type EmotionLabel = '快乐' | '平静' | '悲伤' | '生气' | '害怕' | '惊讶' | '厌恶' | 'unknown'
 

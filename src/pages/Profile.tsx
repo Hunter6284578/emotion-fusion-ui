@@ -1,5 +1,5 @@
-/** 页面2 - 患者档案 Profile
- *  核心功能: 患者信息卡片 + 情绪时间线 + 趋势图表 + 风险评估 */
+/** 页面2 - 受检长者档案 Profile
+ *  核心功能: 受检长者信息卡片 + 情绪时间线 + 趋势图表 + 风险评估 */
 import { useState, useEffect } from 'react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -7,52 +7,66 @@ import {
   BarChart, Bar, Cell,
 } from 'recharts'
 import {
-  User, Calendar, AlertTriangle, TrendingUp, TrendingDown,
+  User, Calendar, AlertTriangle,
   Heart, Activity, ChevronLeft, ChevronRight, Download, Shield,
 } from 'lucide-react'
 import type { VAPoint, EmotionLabel } from '../types'
 import { EMOTION_CONFIG } from '../types'
-import { fetchAssessments } from '../api'
+import { fetchAssessments, fetchPatients } from '../api'
 
-// Mock data for demo (replaced by API when backend connected)
-function generateMockTimeline(_patientId: string): VAPoint[] {
-  const emotions = ['快乐', '平静', '悲伤', '生气', '惊讶'] as const
-  return Array.from({ length: 14 }, (_, i) => ({
-    valence: 0.35 + Math.random() * 0.45,
-    arousal: 0.25 + Math.random() * 0.50,
-    emotion: emotions[i % emotions.length],
-    timestamp: `2026-05-${String(12 + i).padStart(2, '0')}T${8 + (i % 12)}:${(i * 7) % 60}:00`,
-    confidence: 0.65 + Math.random() * 0.30,
-  }))
-}
-
-const PATIENTS = [
-  { id: 'P001', name: '张三', age: 28, gender: '男', diagnosis: '轻度抑郁', risk: 'moderate' as const },
-  { id: 'P002', name: '李四', age: 35, gender: '女', diagnosis: '焦虑症', risk: 'high' as const },
-  { id: 'P003', name: '王五', age: 42, gender: '男', diagnosis: '观察中', risk: 'low' as const },
-]
-
-interface PatientInfo {
-  id: string
-  name: string
-  age: number
-  gender: string
-  diagnosis: string
-  risk: 'low' | 'moderate' | 'high'
+function generateMockTimeline(patientId: string): VAPoint[] {
+  const isScd = patientId === 'P002'
+  const isMci = patientId === 'P003'
+  const isDementia = patientId === 'P004'
+  
+  return Array.from({ length: 8 }, (_, i) => {
+    let risk = 0.12 + Math.random() * 0.1
+    if (isScd) risk = 0.28 + Math.random() * 0.12
+    if (isMci) risk = 0.48 + Math.random() * 0.15
+    if (isDementia) risk = 0.78 + Math.random() * 0.12
+    
+    const classification = risk < 0.25 ? 'healthy' : risk < 0.45 ? 'scd_risk' : risk < 0.75 ? 'mci_risk' : 'dementia_risk'
+    
+    return {
+      valence: parseFloat((0.5 - risk * 0.3).toFixed(2)),
+      arousal: parseFloat((0.5 + risk * 0.3).toFixed(2)),
+      emotion: `Cognitive: ${classification}` as any,
+      timestamp: `2026-05-${String(12 + i * 2).padStart(2, '0')}T10:30:00`,
+      confidence: 0.85 + Math.random() * 0.10,
+    }
+  })
 }
 
 const RISK_CONFIG = {
-  low: { color: '#22C55E', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: '低风险' },
-  moderate: { color: '#F59E0B', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: '中等风险' },
-  high: { color: '#EF4444', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: '高风险 - 建议关注' },
+  low: { color: '#10b981', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100', label: '脑活力优良' },
+  scd: { color: '#eab308', bg: 'bg-yellow-50', text: 'text-yellow-750', border: 'border-yellow-100', label: '主观认知疲劳' },
+  moderate: { color: '#f97316', bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-100', label: '认知功能轻度减退' },
+  high: { color: '#f43f5e', bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-100', label: '建议寻求专科评估' },
 }
 
 export default function Profile() {
-  const [selectedPatient, setSelectedPatient] = useState<PatientInfo>(PATIENTS[0])
+  const [patients, setPatients] = useState<any[]>([])
+  const [selectedPatient, setSelectedPatient] = useState<any>(null)
   const [timeline, setTimeline] = useState<VAPoint[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+    const loadPatients = async () => {
+      try {
+        const data = await fetchPatients()
+        setPatients(data)
+        if (data.length > 0) {
+          setSelectedPatient(data[0])
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    loadPatients()
+  }, [])
+
+  useEffect(() => {
+    if (!selectedPatient) return
     setLoading(true)
     // Try real API first, fall back to mock
     fetchAssessments({ patient_id: selectedPatient.id, limit: 30 })
@@ -71,13 +85,21 @@ export default function Profile() {
       })
       .catch(() => setTimeline(generateMockTimeline(selectedPatient.id)))
       .finally(() => setLoading(false))
-  }, [selectedPatient.id])
+  }, [selectedPatient?.id])
 
-  const currentIdx = PATIENTS.findIndex(p => p.id === selectedPatient.id)
-  const prevPatient = () => setSelectedPatient(PATIENTS[(currentIdx - 1 + PATIENTS.length) % PATIENTS.length])
-  const nextPatient = () => setSelectedPatient(PATIENTS[(currentIdx + 1) % PATIENTS.length])
+  const currentIdx = patients.findIndex(p => p.id === selectedPatient?.id)
+  const prevPatient = () => {
+    if (patients.length === 0) return
+    setSelectedPatient(patients[(currentIdx - 1 + patients.length) % patients.length])
+  }
+  const nextPatient = () => {
+    if (patients.length === 0) return
+    setSelectedPatient(patients[(currentIdx + 1) % patients.length])
+  }
 
-  const riskCfg = RISK_CONFIG[selectedPatient.risk]
+  // Parse risk
+  const patientRisk = selectedPatient?.mock_type === 'dementia' ? 'high' : selectedPatient?.mock_type === 'mci' ? 'moderate' : selectedPatient?.mock_type === 'scd' ? 'scd' : 'low'
+  const riskCfg = RISK_CONFIG[patientRisk as keyof typeof RISK_CONFIG]
   const avgValence = timeline.length > 0 ? timeline.reduce((s, t) => s + (t.valence ?? 0.5), 0) / timeline.length : 0
   const avgArousal = timeline.length > 0 ? timeline.reduce((s, t) => s + (t.arousal ?? 0.5), 0) / timeline.length : 0
 
@@ -86,11 +108,12 @@ export default function Profile() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">患者档案</h2>
-          <p className="text-sm text-slate-500 mt-0.5">查看患者情绪趋势与风险评估</p>
+          <h2 className="text-xl font-bold text-slate-800">受检长者档案</h2>
+          <p className="text-sm text-slate-500 mt-0.5">查看受检长者脑健康趋势与活力评估</p>
         </div>
-        <button onClick={() => window.open('/api/export/csv?patient_id=' + selectedPatient.id)}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+        <button onClick={() => selectedPatient && window.open('/api/export/csv?patient_id=' + selectedPatient.id)}
+          disabled={!selectedPatient}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50">
           <Download size={15} /> 导出报告
         </button>
       </div>
@@ -102,28 +125,34 @@ export default function Profile() {
             <div className={`w-16 h-16 rounded-2xl ${riskCfg.bg.replace('50','100')} flex items-center justify-center`}>
               <User size={28} className={riskCfg.text} />
             </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <h3 className="text-lg font-bold text-slate-800">{selectedPatient.name}</h3>
-                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${riskCfg.bg} ${riskCfg.text}`}>
-                  <Shield size={11} /> {riskCfg.label}
-                </span>
+            {selectedPatient ? (
+              <div className="space-y-1">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-lg font-bold text-slate-800">{selectedPatient.name}</h3>
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${riskCfg.bg} ${riskCfg.text}`}>
+                    <Shield size={11} /> {riskCfg.label}
+                  </span>
+                </div>
+                <p className="text-sm text-slate-500">
+                  ID: {selectedPatient.id} | {selectedPatient.gender} | {selectedPatient.age}岁 | {selectedPatient.diagnosis}
+                </p>
+                <div className="flex items-center gap-4 pt-1">
+                  <StatBadge icon={Heart} label="平均愉悦度" value={`${(avgValence * 100).toFixed(0)}%`} />
+                  <StatBadge icon={Activity} label="平均唤醒度" value={`${(avgArousal * 100).toFixed(0)}%`} />
+                  <StatBadge icon={Calendar} label="评估次数" value={`${timeline.length}`} />
+                </div>
               </div>
-              <p className="text-sm text-slate-500">
-                ID: {selectedPatient.id} | {selectedPatient.gender} | {selectedPatient.age}岁 | {selectedPatient.diagnosis}
-              </p>
-              <div className="flex items-center gap-4 pt-1">
-                <StatBadge icon={Heart} label="平均愉悦度" value={`${(avgValence * 100).toFixed(0)}%`} />
-                <StatBadge icon={Activity} label="平均唤醒度" value={`${(avgArousal * 100).toFixed(0)}%`} />
-                <StatBadge icon={Calendar} label="评估次数" value={`${timeline.length}`} />
+            ) : (
+              <div className="space-y-1 py-4 text-slate-400 text-sm italic">
+                暂未选择或录入受试长者，请在工作台页面录入测试人。
               </div>
-            </div>
+            )}
           </div>
           <div className="flex gap-2">
-            <button onClick={prevPatient} className="p-2 rounded-lg bg-white/70 hover:bg-white transition-colors">
+            <button onClick={prevPatient} disabled={patients.length === 0} className="p-2 rounded-lg bg-white/70 hover:bg-white transition-colors disabled:opacity-50">
               <ChevronLeft size={18} className="text-slate-600" />
             </button>
-            <button onClick={nextPatient} className="p-2 rounded-lg bg-white/70 hover:bg-white transition-colors">
+            <button onClick={nextPatient} disabled={patients.length === 0} className="p-2 rounded-lg bg-white/70 hover:bg-white transition-colors disabled:opacity-50">
               <ChevronRight size={18} className="text-slate-600" />
             </button>
           </div>
@@ -131,19 +160,23 @@ export default function Profile() {
 
         {/* Quick patient switcher */}
         <div className="flex gap-2 mt-4 pt-4 border-t border-slate-200/50">
-          {PATIENTS.map(p => (
-            <button
-              key={p.id}
-              onClick={() => setSelectedPatient(p)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                p.id === selectedPatient.id
-                  ? `${RISK_CONFIG[p.risk].bg} ${RISK_CONFIG[p.risk].text}`
-                  : 'bg-white/60 text-slate-500 hover:bg-white'
-              }`}
-            >
-              {p.name}
-            </button>
-          ))}
+          {patients.map(p => {
+            const pRisk = p.mock_type === 'dementia' ? 'high' : p.mock_type === 'mci' ? 'moderate' : p.mock_type === 'scd' ? 'scd' : 'low'
+            const cfg = RISK_CONFIG[pRisk as keyof typeof RISK_CONFIG]
+            return (
+              <button
+                key={p.id}
+                onClick={() => setSelectedPatient(p)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  selectedPatient && p.id === selectedPatient.id
+                    ? `${cfg.bg} ${cfg.text}`
+                    : 'bg-white/60 text-slate-500 hover:bg-white'
+                }`}
+              >
+                {p.name}
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -206,27 +239,49 @@ export default function Profile() {
 
       {/* Timeline */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-        <h3 className="text-sm font-semibold text-slate-600 mb-4">情绪时间线</h3>
+        <h3 className="text-sm font-semibold text-slate-600 mb-4">认知筛查历史时间线</h3>
         {timeline.length === 0 ? (
           <div className="py-10 text-center text-slate-400 text-sm">暂无评估记录</div>
         ) : (
           <div className="space-y-2 max-h-72 overflow-auto pr-1">
             {timeline.slice().reverse().map((point, i) => {
-              const cfg = EMOTION_CONFIG[point.emotion]
+              let labelText = point.emotion
+              let color = '#94A3B8'
+              
+              if (point.emotion.startsWith('Cognitive:')) {
+                const sub = point.emotion.replace('Cognitive: ', '')
+                if (sub === 'healthy') {
+                  labelText = '脑活力优良' as any
+                  color = '#10b981'
+                } else if (sub === 'scd_risk') {
+                  labelText = '存在主观认知疲劳' as any
+                  color = '#eab308'
+                } else if (sub === 'mci_risk') {
+                  labelText = '认知功能轻度减退' as any
+                  color = '#f97316'
+                } else {
+                  labelText = '建议寻求专科评估' as any
+                  color = '#f43f5e'
+                }
+              } else {
+                const cfg = EMOTION_CONFIG[point.emotion]
+                color = cfg?.color || '#94A3B8'
+              }
+
               return (
                 <div key={i} className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors">
                   <div
                     className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: cfg?.color || '#94A3B8' }}
+                    style={{ backgroundColor: color }}
                   />
-                  <span className="text-sm font-medium text-slate-700 w-14">{point.emotion}</span>
+                  <span className="text-sm font-medium text-slate-700 w-24">{labelText}</span>
                   <div className="flex-1 flex items-center gap-3">
                     <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all"
                         style={{
                           width: `${(point.valence ?? 0.5) * 100}%`,
-                          backgroundColor: point.valence > 0.55 ? '#22C55E' : '#EF4444',
+                          backgroundColor: point.valence > 0.45 ? '#22C55E' : '#EF4444',
                         }}
                       />
                     </div>
@@ -258,25 +313,19 @@ export default function Profile() {
 
       {/* Risk Assessment Panel */}
       {selectedPatient.risk !== 'low' && (
-        <div className="border border-amber-200 bg-amber-50 rounded-xl p-5">
+        <div className={`border rounded-xl p-5 ${selectedPatient.risk === 'high' ? 'border-rose-200 bg-rose-50' : selectedPatient.risk === 'scd' ? 'border-yellow-200 bg-yellow-50' : 'border-orange-200 bg-orange-50'}`}>
           <div className="flex items-start gap-3">
-            <AlertTriangle size={22} className="text-amber-600 shrink-0 mt-0.5" />
+            <AlertTriangle size={22} className={`${selectedPatient.risk === 'high' ? 'text-rose-600' : selectedPatient.risk === 'scd' ? 'text-yellow-750' : 'text-orange-600'} shrink-0 mt-0.5`} />
             <div>
-              <h4 className="font-semibold text-amber-800">风险评估提示</h4>
-              <p className="text-sm text-amber-700 mt-1">
+              <h4 className={`font-semibold ${selectedPatient.risk === 'high' ? 'text-rose-800' : selectedPatient.risk === 'scd' ? 'text-yellow-750' : 'text-orange-800'}`}>脑健康活力温馨提示</h4>
+              <p className={`text-sm mt-1 ${selectedPatient.risk === 'high' ? 'text-rose-700' : selectedPatient.risk === 'scd' ? 'text-yellow-700' : 'text-orange-700'}`}>
                 {selectedPatient.risk === 'high'
-                  ? `检测到 ${selectedPatient.name} 近期情绪波动较大，建议安排面诊或增加评估频率。`
-                  : `${selectedPatient.name} 情绪指标处于临界值，建议持续观察并记录日常变化。`
+                  ? `检测提示 ${selectedPatient.name} 脑电反应速率与心率变异弹性下降，建议寻求专科脑健康评估，并开启精细化的日常脑活力管理。`
+                  : selectedPatient.risk === 'scd'
+                  ? `检测提示 ${selectedPatient.name} 存在轻微的主观认知疲劳，建议合理休息，补充脑健康膳食，避免连续高强度用脑。`
+                  : `检测提示 ${selectedPatient.name} 存在轻度认知减退倾向，建议开启社区非药物干预（如双重任务认知训练与膳食调理），并定期复测脑健康。`
                 }
               </p>
-              <div className="flex gap-4 mt-3">
-                <div className="flex items-center gap-1.5 text-xs text-amber-600">
-                  <TrendingUp size={13} /> 近7天愉悦度趋势: {avgValence > 0.5 ? '上升' : '下降'}
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-amber-600">
-                  <TrendingDown size={13} /> 置信度波动: ±{(0.15 * 100).toFixed(0)}%
-                </div>
-              </div>
             </div>
           </div>
         </div>

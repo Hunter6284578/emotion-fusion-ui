@@ -19,15 +19,23 @@ export interface MergedTimelinePoint {
   arousal: number;
   emotion: EmotionLabel;
   microExpression?: MicroExpressionEvent; // the most intense ME at this point if any
+  cognitive_load?: number;
+  scl_mean?: number;
+  scr_count?: number;
+  gaze_avoidance_score?: number;
 }
 
 const QuietMonitorPanel = forwardRef<QuietMonitorPanelRef>((_, ref) => {
   const [timeline, setTimeline] = useState<MergedTimelinePoint[]>([])
   const [staticResult, setStaticResult] = useState<any | null>(null)
-  const [prolfStatus, setProlfStatus] = useState<{ face: string; speech: string; ecg: string }>({
+  const [prolfStatus, setProlfStatus] = useState<{ face: string; speech: string; ecg: string; eeg: string; gsr: string; gaze: string; text: string }>({
     face: 'disconnected',
     speech: 'disconnected',
-    ecg: 'disconnected'
+    ecg: 'disconnected',
+    eeg: 'disconnected',
+    gsr: 'disconnected',
+    gaze: 'disconnected',
+    text: 'disconnected'
   })
   
   useImperativeHandle(ref, () => ({
@@ -52,6 +60,10 @@ const QuietMonitorPanel = forwardRef<QuietMonitorPanelRef>((_, ref) => {
           valence: packet.valence,
           arousal: packet.arousal,
           emotion: (packet.emotion as EmotionLabel) || 'unknown',
+          cognitive_load: packet.cognitive_load,
+          scl_mean: packet.scl_mean,
+          scr_count: packet.scr_count,
+          gaze_avoidance_score: packet.gaze_avoidance_score,
         }
         
         if (packet.micro_expression_events?.length > 0) {
@@ -72,7 +84,7 @@ const QuietMonitorPanel = forwardRef<QuietMonitorPanelRef>((_, ref) => {
     clear: () => {
       setTimeline([])
       setStaticResult(null)
-      setProlfStatus({ face: 'disconnected', speech: 'disconnected', ecg: 'disconnected' })
+      setProlfStatus({ face: 'disconnected', speech: 'disconnected', ecg: 'disconnected', eeg: 'disconnected', gsr: 'disconnected', gaze: 'disconnected', text: 'disconnected' })
     }
   }))
 
@@ -98,6 +110,10 @@ const QuietMonitorPanel = forwardRef<QuietMonitorPanelRef>((_, ref) => {
       bgClass = 'bg-amber-50 text-amber-700 border-amber-200'
       dotClass = 'bg-amber-500'
       label = 'Phantom'
+    } else if (status === 'fused_out') {
+      bgClass = 'bg-red-50 text-red-700 border-red-200'
+      dotClass = 'bg-red-500'
+      label = '已熔断'
     }
 
     return (
@@ -108,6 +124,9 @@ const QuietMonitorPanel = forwardRef<QuietMonitorPanelRef>((_, ref) => {
           )}
           {status === 'phantom' && (
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+          )}
+          {status === 'fused_out' && (
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
           )}
           <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${dotClass}`}></span>
         </span>
@@ -144,9 +163,13 @@ const QuietMonitorPanel = forwardRef<QuietMonitorPanelRef>((_, ref) => {
         {/* ProLF Status Indicator Capsule Lights */}
         <div className="flex items-center gap-2 text-[10px] bg-slate-50 p-1.5 rounded-xl border border-slate-100 flex-wrap">
           <span className="text-[10px] text-slate-400 font-semibold mr-1">ProLF 状态感知:</span>
-          {renderStatusPill('Face', prolfStatus.face)}
-          {renderStatusPill('Speech', prolfStatus.speech)}
-          {renderStatusPill('ECG', prolfStatus.ecg)}
+          {renderStatusPill('Face', prolfStatus.face || 'disconnected')}
+          {renderStatusPill('Speech', prolfStatus.speech || 'disconnected')}
+          {renderStatusPill('Text', prolfStatus.text || 'disconnected')}
+          {renderStatusPill('ECG', prolfStatus.ecg || 'disconnected')}
+          {renderStatusPill('EEG', prolfStatus.eeg || 'disconnected')}
+          {renderStatusPill('GSR', prolfStatus.gsr || 'disconnected')}
+          {renderStatusPill('Gaze', prolfStatus.gaze || 'disconnected')}
         </div>
       </div>
 
@@ -224,7 +247,7 @@ const QuietMonitorPanel = forwardRef<QuietMonitorPanelRef>((_, ref) => {
 
           {/* Current Static Indicators */}
           {latestPoint && (
-            <div className="grid grid-cols-2 gap-3 mt-auto">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-auto">
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                 <div className="text-[10px] text-slate-400 mb-1">平滑愉悦度 (Valence)</div>
                 <div className="text-[16px] font-bold text-blue-600">{latestPoint.valence.toFixed(2)}</div>
@@ -232,6 +255,18 @@ const QuietMonitorPanel = forwardRef<QuietMonitorPanelRef>((_, ref) => {
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                 <div className="text-[10px] text-slate-400 mb-1">平滑唤醒度 (Arousal)</div>
                 <div className="text-[16px] font-bold text-amber-500">{latestPoint.arousal.toFixed(2)}</div>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                <div className="text-[10px] text-slate-400 mb-1">脑电认知负荷度</div>
+                <div className="text-[16px] font-bold text-indigo-500">{latestPoint.cognitive_load !== undefined ? latestPoint.cognitive_load.toFixed(2) : '-'}</div>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                <div className="text-[10px] text-slate-400 mb-1">皮电唤醒度 (SCL)</div>
+                <div className="text-[16px] font-bold text-orange-500">{latestPoint.scl_mean !== undefined ? latestPoint.scl_mean.toFixed(2) : '-'}</div>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                <div className="text-[10px] text-slate-400 mb-1">视线回避异常</div>
+                <div className="text-[16px] font-bold text-red-500">{latestPoint.gaze_avoidance_score !== undefined ? latestPoint.gaze_avoidance_score.toFixed(2) : '-'}</div>
               </div>
             </div>
           )}

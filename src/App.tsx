@@ -125,10 +125,22 @@ function MainAppLayout() {
   const hideHeader = isImmersiveMode || isClinicalRoute
 
   useEffect(() => {
-    // 动态同步全局 CSS 变量与类
-    document.documentElement.classList.remove('theme-warm', 'theme-high-contrast', 'theme-low-vision')
-    document.documentElement.classList.add(`theme-${theme}`)
-    document.documentElement.style.setProperty('--font-scale', fontScale.toString())
+    const targetClass = `theme-${theme}`
+    const classes = ['theme-warm', 'theme-high-contrast', 'theme-low-vision']
+    
+    if (!document.documentElement.classList.contains(targetClass)) {
+      classes.forEach(c => {
+        if (c !== targetClass) {
+          document.documentElement.classList.remove(c)
+        }
+      })
+      document.documentElement.classList.add(targetClass)
+    }
+    
+    const currentScale = document.documentElement.style.getPropertyValue('--font-scale')
+    if (currentScale !== fontScale.toString()) {
+      document.documentElement.style.setProperty('--font-scale', fontScale.toString())
+    }
   }, [theme, fontScale])
 
   return (

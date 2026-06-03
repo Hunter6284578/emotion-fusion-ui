@@ -28,6 +28,11 @@ export default function Report() {
   const [loading, setLoading] = useState(false)
   const [speakActive, setSpeakActive] = useState(false)
   const [doctorView, setDoctorView] = useState(false)
+
+  // 无障碍图表/数值表双向切换状态
+  const [p300View, setP300View] = useState<'chart' | 'table'>('chart')
+  const [hrvView, setHrvView] = useState<'chart' | 'table'>('chart')
+  const [spo2View, setSpo2View] = useState<'chart' | 'table'>('chart')
   
   // 二维码安全弹窗
   const [showQrModal, setShowQrModal] = useState(false)
@@ -379,67 +384,211 @@ export default function Report() {
             </div>
 
             {/* 展开医生视图的专业数据详情 */}
-            {doctorView && (
-              <div className="space-y-6 pt-2 animate-fade-in-up">
-                
-                {/* 脑电诱发 ERP P300 波形 */}
-                <div className="border border-[var(--color-border-theme)] rounded-2xl p-4 bg-[var(--color-bg-card-alt)]">
-                  <h4 className="font-black text-[var(--color-text-primary)] mb-3">1. 脑电中枢 ERP P300 时域诱发波形对比</h4>
-                  <div className="h-60 w-full text-xs">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={generateP300Data()}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="ms" label={{ value: '时间 (ms)', position: 'insideBottomRight', offset: -5 }} />
-                        <YAxis label={{ value: '电位 (uV)', angle: -90, position: 'insideLeft' }} />
-                        <ChartTooltip />
-                        <Legend />
-                        <Line type="monotone" dataKey="常模对照线" stroke="#94a3b8" strokeWidth={2} dot={false} />
-                        <Line type="monotone" dataKey="受检长者实测ERP" stroke="#3b82f6" strokeWidth={3} dot={false} />
-                        <ReferenceLine x={p300Latency} stroke="#ef4444" label={{ value: `实测峰值: ${p300Latency}ms`, fill: '#ef4444', position: 'top' }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
+            {doctorView && (() => {
+              const p300Data = generateP300Data()
+              const hrvData = [
+                { name: '静息基线态', '参考常模 (RMSSD)': 38, '长者实测 (RMSSD)': Math.round(restRmssd) },
+                { name: '测试负荷态', '参考常模 (RMSSD)': 25, '长者实测 (RMSSD)': Math.round(taskRmssd) }
+              ]
+              const spo2Data = generateSpo2Timeline()
 
-                <div className="grid grid-cols-2 gap-4">
-                  {/* HRV 刚性测试柱状图 */}
-                  <div className="border border-[var(--color-border-theme)] rounded-2xl p-4 bg-[var(--color-bg-card-alt)]">
-                    <h4 className="font-black text-[var(--color-text-primary)] mb-3">2. HRV 自主神经负荷（Rest vs. Task）</h4>
-                    <div className="h-56 w-full text-xs">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={[
-                          { name: '静息基线态', '参考常模 (RMSSD)': 38, '长者实测 (RMSSD)': Math.round(restRmssd) },
-                          { name: '测试负荷态', '参考常模 (RMSSD)': 25, '长者实测 (RMSSD)': Math.round(taskRmssd) }
-                        ]}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
-                          <YAxis />
-                          <ChartTooltip />
-                          <Legend />
-                          <Bar dataKey="参考常模 (RMSSD)" fill="#94a3b8" />
-                          <Bar dataKey="长者实测 (RMSSD)" fill="#f59e0b" />
-                        </BarChart>
-                      </ResponsiveContainer>
+              return (
+                <div className="space-y-6 pt-2 animate-fade-in-up">
+                  
+                  {/* 脑电诱发 ERP P300 波形 */}
+                  <div className="border border-[var(--color-border-theme)] rounded-2xl p-4 bg-[var(--color-bg-card-alt)] flex flex-col justify-between min-h-[320px]">
+                    <div className="flex justify-between items-center pb-2 border-b border-[var(--color-border-theme)] mb-4 flex-wrap-safe gap-2">
+                      <h4 className="font-black text-[var(--color-text-primary)]">1. 脑电中枢 ERP P300 时域诱发波形对比</h4>
+                      <div className="flex p-0.5 bg-[var(--color-bg-primary)] rounded-lg border border-[var(--color-border-theme)]">
+                        <button
+                          type="button"
+                          onClick={() => setP300View('chart')}
+                          className={`px-3 py-1 text-xs font-black rounded cursor-pointer transition-all ${
+                            p300View === 'chart' ? 'bg-[var(--color-accent)] text-white shadow' : 'text-[var(--color-text-secondary)]'
+                          }`}
+                        >
+                          📊 变化图
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setP300View('table')}
+                          className={`px-3 py-1 text-xs font-black rounded cursor-pointer transition-all ${
+                            p300View === 'table' ? 'bg-[var(--color-accent)] text-white shadow' : 'text-[var(--color-text-secondary)]'
+                          }`}
+                        >
+                          📋 数值表
+                        </button>
+                      </div>
+                    </div>
+
+                    {p300View === 'chart' ? (
+                      <div className="h-60 w-full text-xs">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={p300Data}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-text-secondary)" strokeOpacity={0.25} />
+                            <XAxis dataKey="ms" label={{ value: '时间 (ms)', position: 'insideBottomRight', offset: -5 }} />
+                            <YAxis label={{ value: '电位 (uV)', angle: -90, position: 'insideLeft' }} />
+                            <ChartTooltip />
+                            <Legend />
+                            <Line type="monotone" dataKey="常模对照线" stroke="#94a3b8" strokeWidth={2} dot={false} />
+                            <Line type="monotone" dataKey="受检长者实测ERP" stroke="#3b82f6" strokeWidth={3.5} dot={false} />
+                            <ReferenceLine x={p300Latency} stroke="#ef4444" label={{ value: `实测峰值: ${p300Latency}ms`, fill: '#ef4444', position: 'top' }} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <div className="overflow-auto max-h-60 w-full" aria-live="polite">
+                        <table className="table-accessible">
+                          <caption>脑电 ERP P300 诱发数值对照表</caption>
+                          <thead>
+                            <tr>
+                              <th scope="col">时间 (毫秒)</th>
+                              <th scope="col">常模对照值 (uV)</th>
+                              <th scope="col">长者实测值 (uV)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {p300Data.filter((_, idx) => idx % 2 === 0).map((d) => (
+                              <tr key={d.ms}>
+                                <td>{d.ms} ms</td>
+                                <td>{d['常模对照线']} uV</td>
+                                <td className="font-bold text-[var(--color-accent)]">{d['受检长者实测ERP']} uV</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6 flex-wrap-safe">
+                    {/* HRV 刚性测试柱状图 */}
+                    <div className="border border-[var(--color-border-theme)] rounded-2xl p-4 bg-[var(--color-bg-card-alt)] flex flex-col justify-between min-h-[300px]">
+                      <div className="flex justify-between items-center pb-2 border-b border-[var(--color-border-theme)] mb-4 flex-wrap-safe gap-2">
+                        <h4 className="font-black text-[var(--color-text-primary)]">2. HRV 自主神经负荷（Rest vs. Task）</h4>
+                        <div className="flex p-0.5 bg-[var(--color-bg-primary)] rounded-lg border border-[var(--color-border-theme)]">
+                          <button
+                            type="button"
+                            onClick={() => setHrvView('chart')}
+                            className={`px-3 py-1 text-xs font-black rounded cursor-pointer transition-all ${
+                              hrvView === 'chart' ? 'bg-[var(--color-accent)] text-white shadow' : 'text-[var(--color-text-secondary)]'
+                            }`}
+                          >
+                            📊 变化图
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setHrvView('table')}
+                            className={`px-3 py-1 text-xs font-black rounded cursor-pointer transition-all ${
+                              hrvView === 'table' ? 'bg-[var(--color-accent)] text-white shadow' : 'text-[var(--color-text-secondary)]'
+                            }`}
+                          >
+                            📋 数值表
+                          </button>
+                        </div>
+                      </div>
+
+                      {hrvView === 'chart' ? (
+                        <div className="h-56 w-full text-xs">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={hrvData}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-text-secondary)" strokeOpacity={0.25} />
+                              <XAxis dataKey="name" />
+                              <YAxis />
+                              <ChartTooltip />
+                              <Legend />
+                              <Bar dataKey="参考常模 (RMSSD)" fill="#94a3b8" />
+                              <Bar dataKey="长者实测 (RMSSD)" fill="#f59e0b" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      ) : (
+                        <div className="overflow-auto max-h-56 w-full" aria-live="polite">
+                          <table className="table-accessible">
+                            <caption>HRV 自主神经变异指标对照表</caption>
+                            <thead>
+                              <tr>
+                                <th scope="col">生理阶段</th>
+                                <th scope="col">参考常模 (RMSSD)</th>
+                                <th scope="col">长者实测值 (RMSSD)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {hrvData.map((d) => (
+                                <tr key={d.name}>
+                                  <td>{d.name}</td>
+                                  <td>{d['参考常模 (RMSSD)']} ms</td>
+                                  <td className="font-bold text-[var(--color-accent)]">{d['长者实测 (RMSSD)']} ms</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* SpO2Hypoxia 指征监控线 */}
+                    <div className="border border-[var(--color-border-theme)] rounded-2xl p-4 bg-[var(--color-bg-card-alt)] flex flex-col justify-between min-h-[300px]">
+                      <div className="flex justify-between items-center pb-2 border-b border-[var(--color-border-theme)] mb-4 flex-wrap-safe gap-2">
+                        <h4 className="font-black text-[var(--color-text-primary)]">3. 连续血氧饱和度慢变量监控 (SpO2)</h4>
+                        <div className="flex p-0.5 bg-[var(--color-bg-primary)] rounded-lg border border-[var(--color-border-theme)]">
+                          <button
+                            type="button"
+                            onClick={() => setSpo2View('chart')}
+                            className={`px-3 py-1 text-xs font-black rounded cursor-pointer transition-all ${
+                              spo2View === 'chart' ? 'bg-[var(--color-accent)] text-white shadow' : 'text-[var(--color-text-secondary)]'
+                            }`}
+                          >
+                            📊 变化图
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSpo2View('table')}
+                            className={`px-3 py-1 text-xs font-black rounded cursor-pointer transition-all ${
+                              spo2View === 'table' ? 'bg-[var(--color-accent)] text-white shadow' : 'text-[var(--color-text-secondary)]'
+                            }`}
+                          >
+                            📋 数值表
+                          </button>
+                        </div>
+                      </div>
+
+                      {spo2View === 'chart' ? (
+                        <div className="h-56 w-full text-xs">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={spo2Data}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-text-secondary)" strokeOpacity={0.25} />
+                              <XAxis dataKey="time" />
+                              <YAxis domain={[80, 100]} />
+                              <ChartTooltip />
+                              <Legend />
+                              <Line type="monotone" dataKey="血氧饱和度 (%)" stroke="#ef4444" strokeWidth={3.5} dot={false} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      ) : (
+                        <div className="overflow-auto max-h-56 w-full" aria-live="polite">
+                          <table className="table-accessible">
+                            <caption>连续血氧饱和度指标对照表</caption>
+                            <thead>
+                              <tr>
+                                <th scope="col">时序时间点</th>
+                                <th scope="col">血氧饱和度百分比</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {spo2Data.filter((_, idx) => idx % 3 === 0).map((d) => (
+                                <tr key={d.time}>
+                                  <td>{d.time}</td>
+                                  <td className="font-bold text-[var(--color-accent)]">{d['血氧饱和度 (%)']}%</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
                   </div>
-
-                  {/* SpO2Hypoxia 指征监控线 */}
-                  <div className="border border-[var(--color-border-theme)] rounded-2xl p-4 bg-[var(--color-bg-card-alt)]">
-                    <h4 className="font-black text-[var(--color-text-primary)] mb-3">3. 连续血氧饱和度慢变量监控 (SpO2)</h4>
-                    <div className="h-56 w-full text-xs">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={generateSpo2Timeline()}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="time" />
-                          <YAxis domain={[80, 100]} />
-                          <ChartTooltip />
-                          <Legend />
-                          <Line type="monotone" dataKey="血氧饱和度 (%)" stroke="#ef4444" strokeWidth={2.5} dot={false} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                </div>
 
                 {/* 生理与数据特征信息 */}
                 <div className="grid grid-cols-3 gap-4 text-sm font-bold text-[var(--color-text-secondary)]">
@@ -453,9 +602,9 @@ export default function Report() {
                     信噪比评估指数 (SNR)：{(activeRecord.quality * 100).toFixed(0)}%
                   </div>
                 </div>
-
               </div>
-            )}
+            )
+          })()}
           </div>
 
           {/* 适老化精简历史记录列表 */}

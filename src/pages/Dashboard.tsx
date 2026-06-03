@@ -779,195 +779,228 @@ export default function Dashboard() {
             
             {gameMode === null ? (
               <>
-                {/* 准备阶段 0 */}
                 {sopStep === 0 && (
                   <div className="flex-grow flex flex-col justify-between space-y-6">
+                    {/* 第一段: 顶部欢迎与状态区 (医疗蓝横幅) */}
+                    <div className="bg-[var(--color-accent)] text-white p-6 rounded-2xl shadow-md space-y-2 relative overflow-hidden shrink-0">
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-10">
+                        <Brain size={120} />
+                      </div>
+                      <h3 className="text-2xl font-black text-white">脑活力与认知功能联合筛查台</h3>
+                      <p className="text-base text-blue-100 font-bold">
+                        {selectedPatient 
+                          ? `当前已选择受试人：${selectedPatient.name} (${selectedPatient.age}岁) | 编号: #${selectedPatient.id}` 
+                          : '请在下方名册中选择或录入受试长者，然后开启筛查或训练项目'}
+                      </p>
+                    </div>
+
+                    {submitSuccessMsg && (
+                      <div className="p-4 bg-emerald-50 border-2 border-emerald-200 text-emerald-800 text-lg font-bold rounded-2xl animate-fade-in-up">
+                        {submitSuccessMsg}
+                      </div>
+                    )}
+
+                    {/* 第二段: 中部双引擎行动区 (Fitts 定律大热区) */}
                     <div className="space-y-4">
-                      {/* Tabs 选择器 */}
-                      <div className="flex gap-6 border-b-2 border-[var(--color-border-theme)] pb-2 mb-4">
+                      <div className="grid grid-cols-2 gap-6">
+                        {/* 引擎卡片 1: SOP 联合筛查 */}
                         <button
+                          type="button"
                           onClick={() => { setActiveTab('sop'); setSubmitSuccessMsg(''); }}
-                          className={`pb-2 px-4 text-xl font-black transition-all border-b-4 ${
-                            activeTab === 'sop' 
-                              ? 'border-[var(--color-accent)] text-[var(--color-accent)]' 
-                              : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+                          className={`text-left p-6 rounded-2xl border-4 transition-all duration-200 cursor-pointer min-h-[140px] flex flex-col justify-between active:scale-[0.98] w-full ${
+                            activeTab === 'sop'
+                              ? 'border-[var(--color-accent)] bg-[var(--color-bg-card-alt)] shadow-lg'
+                              : 'border-[var(--color-border-theme)] bg-[var(--color-bg-card)] hover:bg-[var(--color-bg-card-alt)]'
                           }`}
                         >
-                          📋 脑健康联合筛查 (SOP)
+                          <div className="flex justify-between items-start w-full">
+                            <span className="inline-block px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold rounded-lg">临床推荐</span>
+                            <ChevronRight size={24} className={activeTab === 'sop' ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)]'} />
+                          </div>
+                          <div>
+                            <h4 className="text-xl font-black text-[var(--color-text-primary)]">📋 脑健康联合筛查 (SOP)</h4>
+                            <p className="text-xs text-[var(--color-text-secondary)] mt-1">10分钟临床规范流程，脑电、心电与血氧三位一体多模态实时评估。</p>
+                          </div>
                         </button>
+
+                        {/* 引擎卡片 2: 益智康复训练中心 */}
                         <button
+                          type="button"
                           onClick={() => { setActiveTab('games'); setSubmitSuccessMsg(''); }}
-                          className={`pb-2 px-4 text-xl font-black transition-all border-b-4 ${
-                            activeTab === 'games' 
-                              ? 'border-[var(--color-accent)] text-[var(--color-accent)]' 
-                              : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+                          className={`text-left p-6 rounded-2xl border-4 transition-all duration-200 cursor-pointer min-h-[140px] flex flex-col justify-between active:scale-[0.98] w-full ${
+                            activeTab === 'games'
+                              ? 'border-[var(--color-accent)] bg-[var(--color-bg-card-alt)] shadow-lg'
+                              : 'border-[var(--color-border-theme)] bg-[var(--color-bg-card)] hover:bg-[var(--color-bg-card-alt)]'
                           }`}
                         >
-                          🎮 益智康复训练中心
+                          <div className="flex justify-between items-start w-full">
+                            <span className="inline-block px-3 py-1 bg-green-50 border border-green-200 text-green-700 text-xs font-bold rounded-lg">日常训练</span>
+                            <ChevronRight size={24} className={activeTab === 'games' ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)]'} />
+                          </div>
+                          <div>
+                            <h4 className="text-xl font-black text-[var(--color-text-primary)]">🎮 益智康复训练中心</h4>
+                            <p className="text-xs text-[var(--color-text-secondary)] mt-1">包含语言流畅、逻辑联想、工作记忆 3 类自适应脑力康复训练游戏。</p>
+                          </div>
                         </button>
                       </div>
 
-                      {submitSuccessMsg && (
-                        <div className="p-4 bg-emerald-50 border-2 border-emerald-200 text-emerald-800 text-lg font-bold rounded-2xl animate-fade-in-up">
-                          {submitSuccessMsg}
-                        </div>
-                      )}
-
-                      {/* Tab 1: SOP 联合筛查 */}
-                      {activeTab === 'sop' && (
-                        <div className="space-y-4">
-                          <h3 className="text-2xl font-black text-[var(--color-text-primary)]">1. 选择或录入受试长者</h3>
-                          {loadingPatients ? (
-                            <div className="py-10 text-center text-lg text-[var(--color-text-muted)]">正在加载长者列表...</div>
-                          ) : (
-                            <div className="grid grid-cols-3 gap-4">
-                              {patients.map(p => (
-                                <button
-                                  key={p.id}
-                                  onClick={() => {
-                                    setSelectedPatient(p)
-                                    setSubmitSuccessMsg('')
-                                  }}
-                                  className={`text-left p-5 rounded-2xl border-2 transition-all cursor-pointer ${
-                                    selectedPatient && selectedPatient.id === p.id 
-                                      ? 'border-[var(--color-accent)] bg-[var(--color-bg-card-alt)] shadow' 
-                                      : 'border-[var(--color-border-theme)] bg-[var(--color-bg-card)] hover:bg-[var(--color-bg-card-alt)]'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
-                                      selectedPatient && selectedPatient.id === p.id ? 'bg-[var(--color-accent)] text-white' : 'bg-[var(--color-bg-card-alt)] text-[var(--color-text-secondary)]'
-                                    }`}>
-                                      <User size={24} />
-                                    </div>
-                                    <div>
-                                      <div className="text-lg font-black text-[var(--color-text-primary)]">{p.name}</div>
-                                      <div className="text-xs text-[var(--color-text-muted)]">年龄: {p.age} 岁 | #{p.id}</div>
-                                    </div>
-                                  </div>
-                                  <p className="text-sm text-[var(--color-text-secondary)] font-bold mt-4 border-t border-[var(--color-border-theme)] pt-3 line-clamp-2">
-                                    {p.diagnosis}
-                                  </p>
-                                </button>
-                              ))}
-                              
-                              <button
-                                onClick={() => setShowAddModal(true)}
-                                className="p-5 rounded-2xl border-2 border-dashed border-[var(--color-border-theme)] hover:bg-[var(--color-bg-card-alt)] transition-all flex flex-col items-center justify-center min-h-[140px] text-[var(--color-text-secondary)] cursor-pointer bg-transparent"
-                              >
-                                <span className="w-10 h-10 rounded-full bg-[var(--color-bg-card-alt)] flex items-center justify-center mb-2 font-bold text-2xl shrink-0">+</span>
-                                <div className="text-base font-black">录入受试长者</div>
-                                <div className="text-xs text-[var(--color-text-muted)] mt-1">录入必要病理与学历背景</div>
-                              </button>
+                      {/* 引擎对应的内容面板 */}
+                      {activeTab === 'sop' ? (
+                        <div className="bg-[var(--color-bg-card-alt)] border-2 border-[var(--color-border-theme)] rounded-2xl p-5 space-y-4 animate-fade-in-up">
+                          <div className="flex items-center gap-2 text-[var(--color-text-primary)] font-black text-lg">
+                            <Award size={20} className="text-[var(--color-accent)]" />
+                            联合筛查测试项目流程说明
+                          </div>
+                          <div className="grid grid-cols-3 gap-4 text-sm leading-relaxed">
+                            <div className="bg-[var(--color-bg-card)] p-4 border border-[var(--color-border-theme)] rounded-xl">
+                              <div className="font-black text-[var(--color-text-primary)]">① 呼吸基线采集</div>
+                              <p className="text-[var(--color-text-secondary)] text-xs mt-1.5">平稳深呼吸引导，建立个体在无外部压力下的生理对比标尺。</p>
                             </div>
-                          )}
-
-                          <div className="bg-[var(--color-bg-card-alt)] border-2 border-[var(--color-border-theme)] rounded-2xl p-5 space-y-3 mt-6">
-                            <div className="flex items-center gap-2 text-[var(--color-text-primary)] font-black text-lg">
-                              <Award size={20} className="text-[var(--color-accent)]" />
-                              认知筛查测试流程 (10分钟 SOP 规范)
+                            <div className="bg-[var(--color-bg-card)] p-4 border border-[var(--color-border-theme)] rounded-xl">
+                              <div className="font-black text-[var(--color-text-primary)]">② 被动情绪活力</div>
+                              <p className="text-[var(--color-text-secondary)] text-xs mt-1.5">怀旧温馨画面刺激，静默捕捉面部微表情反应与心率弹性。</p>
                             </div>
-                            <div className="grid grid-cols-3 gap-4 text-sm leading-relaxed">
-                              <div className="bg-[var(--color-bg-card)] p-4 border border-[var(--color-border-theme)] rounded-xl">
-                                <div className="font-black text-[var(--color-text-primary)]">① 呼吸基线采集</div>
-                                <p className="text-[var(--color-text-secondary)] text-xs mt-1.5">闭眼1分钟/开眼1分钟，平稳呼呼吸建立生理标尺。</p>
-                              </div>
-                              <div className="bg-[var(--color-bg-card)] p-4 border border-[var(--color-border-theme)] rounded-xl">
-                                <div className="font-black text-[var(--color-text-primary)]">② 被动情绪活力</div>
-                                <p className="text-[var(--color-text-secondary)] text-xs mt-1.5">Ken Burns温馨怀旧画面投影，捕捉生理与微表情变异度。</p>
-                              </div>
-                              <div className="bg-[var(--color-bg-card)] p-4 border border-[var(--color-border-theme)] rounded-xl">
-                                <div className="font-black text-[var(--color-text-primary)]">③ 主动任务负荷</div>
-                                <p className="text-[var(--color-text-secondary)] text-xs mt-1.5">词语记忆回忆与 dCDT 画钟测验，评估认知执行能力。</p>
-                              </div>
+                            <div className="bg-[var(--color-bg-card)] p-4 border border-[var(--color-border-theme)] rounded-xl">
+                              <div className="font-black text-[var(--color-text-primary)]">③ 主动任务负荷</div>
+                              <p className="text-[var(--color-text-secondary)] text-xs mt-1.5">画钟与词语回忆挑战，全面评估大脑执行控制与记忆激活度。</p>
                             </div>
                           </div>
+                          <div className="pt-2 flex items-center justify-between border-t border-[var(--color-border-theme)] flex-wrap-safe gap-2">
+                            <div className="text-xs text-[var(--color-text-muted)]">开始前，请协助老人坐姿平稳并戴好传感器。</div>
+                            <button
+                              onClick={startSopScreening}
+                              disabled={!selectedPatient}
+                              className="btn-elderly bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white shadow disabled:opacity-50 border-none"
+                            >
+                              <Play size={18} fill="currentColor" /> 开始联合认知筛查
+                            </button>
+                          </div>
                         </div>
-                      )}
-
-                      {/* Tab 2: 益智康复小游戏 */}
-                      {activeTab === 'games' && (
-                        <div className="space-y-6">
-                          <div className="bg-[var(--color-bg-card-alt)] border-2 border-[var(--color-border-theme)] rounded-2xl p-5 space-y-2">
-                            <div className="flex items-center gap-3">
-                              <Brain className="text-[var(--color-accent)]" size={28} />
-                              <h3 className="text-2xl font-black text-[var(--color-text-primary)]">益智康复训练中心</h3>
-                            </div>
-                            <p className="text-base text-[var(--color-text-secondary)]">
-                              点击下方卡片选择对应认知大类游戏，难度将根据答题情况智能升降。
-                            </p>
+                      ) : (
+                        <div className="bg-[var(--color-bg-card-alt)] border-2 border-[var(--color-border-theme)] rounded-2xl p-5 space-y-4 animate-fade-in-up">
+                          <div className="flex items-center gap-2 text-[var(--color-text-primary)] font-black text-lg">
+                            <Brain className="text-[var(--color-accent)]" size={20} />
+                            益智数字化康复训练选择
                           </div>
                           
                           <div className="grid grid-cols-3 gap-4">
                             {/* Game 1 */}
-                            <div className="bg-[var(--color-bg-card)] border-2 border-[var(--color-border-theme)] rounded-2xl p-5 flex flex-col justify-between space-y-4">
-                              <div className="space-y-2">
-                                <span className="inline-block px-2.5 py-1 bg-green-50 border border-green-200 text-green-700 text-xs font-bold rounded-lg">语言流畅</span>
-                                <h4 className="text-lg font-black text-[var(--color-text-primary)]">流畅性挑战</h4>
-                                <p className="text-xs text-[var(--color-text-secondary)]">60秒大挑战，交替说出水果与动物，训练概念检索脑区。</p>
+                            <div className="bg-[var(--color-bg-card)] border-2 border-[var(--color-border-theme)] rounded-2xl p-4 flex flex-col justify-between space-y-4">
+                              <div className="space-y-1">
+                                <span className="inline-block px-2 py-0.5 bg-green-50 border border-green-200 text-green-700 text-xs font-bold rounded">语言流畅</span>
+                                <h4 className="text-base font-black text-[var(--color-text-primary)]">流畅性挑战</h4>
+                                <p className="text-[11px] text-[var(--color-text-secondary)] leading-relaxed">一分钟快速说词，训练词汇概念检索脑区，延缓言语能力衰退。</p>
                               </div>
                               <button
                                 onClick={() => startGame('fluency')}
                                 disabled={!selectedPatient}
-                                className="w-full btn-elderly bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] shadow-sm disabled:opacity-50 border-none"
+                                className="w-full py-2 bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] text-sm font-bold rounded-xl shadow-sm disabled:opacity-50 border-none cursor-pointer min-h-[44px] flex items-center justify-center"
                               >
                                 进入训练
                               </button>
                             </div>
 
                             {/* Game 2 */}
-                            <div className="bg-[var(--color-bg-card)] border-2 border-[var(--color-border-theme)] rounded-2xl p-5 flex flex-col justify-between space-y-4">
-                              <div className="space-y-2">
-                                <span className="inline-block px-2.5 py-1 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold rounded-lg">前额叶区</span>
-                                <h4 className="text-lg font-black text-[var(--color-text-primary)]">概念逻辑配对</h4>
-                                <p className="text-xs text-[var(--color-text-secondary)]">从逻辑选项中找出关联最强的词汇，保护神经通路突触活力。</p>
+                            <div className="bg-[var(--color-bg-card)] border-2 border-[var(--color-border-theme)] rounded-2xl p-4 flex flex-col justify-between space-y-4">
+                              <div className="space-y-1">
+                                <span className="inline-block px-2 py-0.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold rounded">前额叶区</span>
+                                <h4 className="text-base font-black text-[var(--color-text-primary)]">概念逻辑配对</h4>
+                                <p className="text-[11px] text-[var(--color-text-secondary)] leading-relaxed">逻辑选项匹配，增强语义神经突触活性，提升概念抽象思考力。</p>
                               </div>
                               <button
                                 onClick={() => startGame('association')}
                                 disabled={!selectedPatient}
-                                className="w-full btn-elderly bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] shadow-sm disabled:opacity-50 border-none"
+                                className="w-full py-2 bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] text-sm font-bold rounded-xl shadow-sm disabled:opacity-50 border-none cursor-pointer min-h-[44px] flex items-center justify-center"
                               >
                                 进入训练
                               </button>
                             </div>
 
                             {/* Game 3 */}
-                            <div className="bg-[var(--color-bg-card)] border-2 border-[var(--color-border-theme)] rounded-2xl p-5 flex flex-col justify-between space-y-4">
-                              <div className="space-y-2">
-                                <span className="inline-block px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold rounded-lg">工作记忆</span>
-                                <h4 className="text-lg font-black text-[var(--color-text-primary)]">数字倒序记忆</h4>
-                                <p className="text-xs text-[var(--color-text-secondary)]">看数字并倒着输入，失败时智能温和降低位数或转换关卡。</p>
+                            <div className="bg-[var(--color-bg-card)] border-2 border-[var(--color-border-theme)] rounded-2xl p-4 flex flex-col justify-between space-y-4">
+                              <div className="space-y-1">
+                                <span className="inline-block px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold rounded">工作记忆</span>
+                                <h4 className="text-base font-black text-[var(--color-text-primary)]">数字倒序记忆</h4>
+                                <p className="text-[11px] text-[var(--color-text-secondary)] leading-relaxed">听写并逆序输入数字，配备双错降级的自适应自反馈机制。</p>
                               </div>
                               <button
                                 onClick={() => startGame('digit')}
                                 disabled={!selectedPatient}
-                                className="w-full btn-elderly bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] shadow-sm disabled:opacity-50 border-none"
+                                className="w-full py-2 bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] text-sm font-bold rounded-xl shadow-sm disabled:opacity-50 border-none cursor-pointer min-h-[44px] flex items-center justify-center"
                               >
                                 进入训练
                               </button>
                             </div>
                           </div>
                           {!selectedPatient && (
-                            <p className="text-base text-rose-700 font-bold text-center bg-rose-50 border border-rose-200 p-3 rounded-xl">
-                              ⚠️ 请先在左侧选择或录入受试长者，再开始康复训练。
+                            <p className="text-sm text-rose-700 font-bold text-center bg-rose-50 border border-rose-200 p-2.5 rounded-xl">
+                              ⚠️ 请先在下方选择或录入受试长者，再开始康复训练。
                             </p>
                           )}
                         </div>
                       )}
                     </div>
 
-                    {activeTab === 'sop' && (
-                      <div className="pt-6 border-t border-[var(--color-border-theme)] flex items-center justify-between">
-                        <div className="text-sm text-[var(--color-text-muted)]">开始前，请协助老人坐姿平稳并戴好传感器。</div>
+                    {/* 第三段: 底部长者名册管理 */}
+                    <div className="space-y-3 pt-4 border-t border-[var(--color-border-theme)] flex-grow">
+                      <div className="flex justify-between items-center flex-wrap-safe gap-2">
+                        <h3 className="text-lg font-black text-[var(--color-text-primary)]">3. 选择受试长者名册</h3>
                         <button
-                          onClick={startSopScreening}
-                          disabled={!selectedPatient}
-                          className="btn-elderly bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white shadow disabled:opacity-50 border-none"
+                          onClick={() => setShowAddModal(true)}
+                          className="px-4 py-2 bg-[var(--color-bg-card-alt)] hover:bg-slate-200 border-2 border-[var(--color-border-theme)] rounded-xl text-sm font-black flex items-center gap-1.5 cursor-pointer min-h-[44px]"
                         >
-                          <Play size={18} fill="currentColor" /> 开始联合认知筛查
+                          <span>+</span> 录入新长者
                         </button>
                       </div>
-                    )}
+
+                      {loadingPatients ? (
+                        <div className="py-8 text-center text-sm text-[var(--color-text-muted)]">正在加载长者列表...</div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-4">
+                          {patients.map(p => (
+                            <button
+                              key={p.id}
+                              onClick={() => {
+                                setSelectedPatient(p)
+                                setSubmitSuccessMsg('')
+                              }}
+                              className={`text-left p-4 rounded-xl border-2 transition-all cursor-pointer min-h-[100px] flex flex-col justify-between active:scale-[0.98] w-full ${
+                                selectedPatient && selectedPatient.id === p.id 
+                                  ? 'border-[var(--color-accent)] bg-[var(--color-bg-card-alt)] ring-2 ring-[var(--color-accent)]' 
+                                  : 'border-[var(--color-border-theme)] bg-[var(--color-bg-card)] hover:bg-[var(--color-bg-card-alt)]'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-2.5">
+                                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                                    selectedPatient && selectedPatient.id === p.id ? 'bg-[var(--color-accent)] text-white' : 'bg-[var(--color-bg-card-alt)] text-[var(--color-text-secondary)]'
+                                  }`}>
+                                    <User size={20} />
+                                  </div>
+                                  <div>
+                                    <div className="text-base font-black text-[var(--color-text-primary)]">{p.name}</div>
+                                    <div className="text-[10px] text-[var(--color-text-muted)]">年龄: {p.age} 岁 | #{p.id}</div>
+                                  </div>
+                                </div>
+                                <span className={`text-[10px] px-2 py-0.5 rounded font-black border ${
+                                  p.mock_type === 'healthy' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                  p.mock_type === 'scd' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                  p.mock_type === 'mci' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                                  'bg-rose-50 text-rose-700 border-rose-200'
+                                }`}>
+                                  {p.mock_type === 'healthy' ? '脑活力优良' :
+                                   p.mock_type === 'scd' ? '认知疲劳' :
+                                   p.mock_type === 'mci' ? '认知轻减' : '建议评估'}
+                                </span>
+                              </div>
+                              <p className="text-xs text-[var(--color-text-secondary)] font-bold mt-3 border-t border-[var(--color-border-theme)] pt-2 line-clamp-1">
+                                {p.diagnosis}
+                              </p>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 

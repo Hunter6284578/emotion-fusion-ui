@@ -117,7 +117,7 @@ function SidebarStatus() {
 }
 
 function MainAppLayout() {
-  const { isImmersiveMode, theme, fontScale } = useImmersiveMode()
+  const { isImmersiveMode, theme, setTheme, fontScale, setFontScale } = useImmersiveMode()
   const location = useLocation()
   
   // 隐藏顶部导航：处于沉浸测试模式，或者是医生的独立扫码查看页
@@ -147,18 +147,18 @@ function MainAppLayout() {
     <div className="min-h-screen flex flex-col bg-[var(--color-bg-primary)] transition-colors duration-200">
       {/* 头部大 Tab 导航栏 */}
       {!hideHeader && (
-        <header className="flex items-center justify-between px-6 py-4 bg-[var(--color-bg-card)] border-b-2 border-[var(--color-border-theme)] shrink-0 print:hidden">
+        <header className="flex items-center justify-between px-6 py-4 bg-[var(--color-bg-card)] border-b-2 border-[var(--color-border-theme)] shrink-0 print:hidden flex-wrap-safe gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[var(--color-accent)] flex items-center justify-center">
               <Brain size={22} className="text-white" />
             </div>
             <div>
               <h1 className="text-2xl font-black text-[var(--color-text-primary)] leading-tight tracking-wide">脑心行为联合评估</h1>
-              <p className="text-sm text-[var(--color-text-secondary)] font-bold">适老化健康管理系统 v3.2</p>
+              <p className="text-sm text-[var(--color-text-secondary)] font-bold">适老化健康管理系统 v3.5</p>
             </div>
           </div>
 
-          <nav className="flex items-center gap-4">
+          <nav className="flex items-center gap-4 flex-wrap-safe">
             {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
               <NavLink
                 key={to}
@@ -178,7 +178,84 @@ function MainAppLayout() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4 flex-wrap-safe">
+            {/* 无障碍快捷控制条 */}
+            <div className="flex items-center gap-3 p-1.5 bg-[var(--color-bg-card-alt)] rounded-2xl border-2 border-[var(--color-border-theme)] print:hidden">
+              {/* 配色切换 */}
+              <div className="flex items-center gap-1 border-r-2 border-[var(--color-border-theme)] pr-2">
+                <button
+                  onClick={() => setTheme('warm')}
+                  className={`px-3 py-2 text-sm font-black rounded-xl transition-all cursor-pointer min-h-[44px] min-w-[56px] flex items-center justify-center ${
+                    theme === 'warm'
+                      ? 'bg-[var(--color-accent)] text-white shadow'
+                      : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-primary)]'
+                  }`}
+                  title="米黄温暖配色"
+                >
+                  米黄
+                </button>
+                <button
+                  onClick={() => setTheme('high-contrast')}
+                  className={`px-3 py-2 text-sm font-black rounded-xl transition-all cursor-pointer min-h-[44px] min-w-[56px] flex items-center justify-center ${
+                    theme === 'high-contrast'
+                      ? 'bg-[var(--color-accent)] text-white shadow'
+                      : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-primary)]'
+                  }`}
+                  title="蓝白高对比配色"
+                >
+                  蓝白
+                </button>
+                <button
+                  onClick={() => setTheme('low-vision')}
+                  className={`px-3 py-2 text-sm font-black rounded-xl transition-all cursor-pointer min-h-[44px] min-w-[56px] flex items-center justify-center ${
+                    theme === 'low-vision'
+                      ? 'bg-[var(--color-accent)] text-white shadow'
+                      : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-primary)]'
+                  }`}
+                  title="黑黄弱视配色"
+                >
+                  黑黄
+                </button>
+              </div>
+
+              {/* 字号缩放 */}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setFontScale(1.0)}
+                  className={`w-11 h-11 text-base font-black rounded-xl transition-all cursor-pointer flex items-center justify-center ${
+                    fontScale === 1.0
+                      ? 'bg-[var(--color-accent)] text-white shadow'
+                      : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-primary)]'
+                  }`}
+                  title="标准字号"
+                >
+                  A
+                </button>
+                <button
+                  onClick={() => setFontScale(1.25)}
+                  className={`w-11 h-11 text-xl font-black rounded-xl transition-all cursor-pointer flex items-center justify-center ${
+                    fontScale === 1.25
+                      ? 'bg-[var(--color-accent)] text-white shadow'
+                      : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-primary)]'
+                  }`}
+                  title="中号字号"
+                >
+                  A+
+                </button>
+                <button
+                  onClick={() => setFontScale(1.5)}
+                  className={`w-11 h-11 text-2xl font-black rounded-xl transition-all cursor-pointer flex items-center justify-center ${
+                    fontScale === 1.5
+                      ? 'bg-[var(--color-accent)] text-white shadow'
+                      : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-primary)]'
+                  }`}
+                  title="巨大字号"
+                >
+                  A++
+                </button>
+              </div>
+            </div>
+
             <SidebarStatus />
           </div>
         </header>

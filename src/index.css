@@ -254,3 +254,36 @@ p, span, div, li { font-size: calc(18px * var(--font-scale, 1.0)); }
     page-break-inside: avoid;
   }
 }
+
+/* 呼吸花朵动效 */
+@keyframes breathing-flower {
+  0%, 100% {
+    transform: scale(0.85) rotate(0deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.15) rotate(180deg);
+    opacity: 1;
+    filter: drop-shadow(0 0 25px rgba(37, 99, 235, 0.4));
+  }
+}
+.animate-breathing-flower {
+  animation: breathing-flower 8s ease-in-out infinite;
+}
+
+/* Ken Burns 渐隐渐现+缩放平移动效 */
+@keyframes ken-burns {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  50% {
+    transform: scale(1.12) translate(-2%, 1%);
+  }
+  100% {
+    transform: scale(1) translate(0, 0);
+  }
+}
+.animate-ken-burns {
+  animation: ken-burns 15s ease-in-out infinite;
+}
+

@@ -74,9 +74,9 @@ export default function History() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       result = result.filter(r =>
-        r.patient_name.toLowerCase().includes(q) ||
-        r.patient_id.toLowerCase().includes(q) ||
-        r.final_emotion.includes(q)
+        (r.patient_name || '').toLowerCase().includes(q) ||
+        (r.patient_id || '').toLowerCase().includes(q) ||
+        (r.final_emotion || '').includes(q)
       )
     }
     if (filterEmotion !== 'all') result = result.filter(r => r.final_emotion === filterEmotion)

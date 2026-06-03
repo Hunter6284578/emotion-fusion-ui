@@ -312,16 +312,16 @@ export default function Profile() {
       </div>
 
       {/* Risk Assessment Panel */}
-      {selectedPatient.risk !== 'low' && (
-        <div className={`border rounded-xl p-5 ${selectedPatient.risk === 'high' ? 'border-rose-200 bg-rose-50' : selectedPatient.risk === 'scd' ? 'border-yellow-200 bg-yellow-50' : 'border-orange-200 bg-orange-50'}`}>
+      {selectedPatient && patientRisk !== 'low' && (
+        <div className={`border rounded-xl p-5 ${patientRisk === 'high' ? 'border-rose-200 bg-rose-50' : patientRisk === 'scd' ? 'border-yellow-200 bg-yellow-50' : 'border-orange-200 bg-orange-50'}`}>
           <div className="flex items-start gap-3">
-            <AlertTriangle size={22} className={`${selectedPatient.risk === 'high' ? 'text-rose-600' : selectedPatient.risk === 'scd' ? 'text-yellow-750' : 'text-orange-600'} shrink-0 mt-0.5`} />
+            <AlertTriangle size={22} className={`${patientRisk === 'high' ? 'text-rose-600' : patientRisk === 'scd' ? 'text-yellow-750' : 'text-orange-600'} shrink-0 mt-0.5`} />
             <div>
-              <h4 className={`font-semibold ${selectedPatient.risk === 'high' ? 'text-rose-800' : selectedPatient.risk === 'scd' ? 'text-yellow-750' : 'text-orange-800'}`}>脑健康活力温馨提示</h4>
-              <p className={`text-sm mt-1 ${selectedPatient.risk === 'high' ? 'text-rose-700' : selectedPatient.risk === 'scd' ? 'text-yellow-700' : 'text-orange-700'}`}>
-                {selectedPatient.risk === 'high'
+              <h4 className={`font-semibold ${patientRisk === 'high' ? 'text-rose-800' : patientRisk === 'scd' ? 'text-yellow-750' : 'text-orange-800'}`}>脑健康活力温馨提示</h4>
+              <p className={`text-sm mt-1 ${patientRisk === 'high' ? 'text-rose-700' : patientRisk === 'scd' ? 'text-yellow-700' : 'text-orange-700'}`}>
+                {patientRisk === 'high'
                   ? `检测提示 ${selectedPatient.name} 脑电反应速率与心率变异弹性下降，建议寻求专科脑健康评估，并开启精细化的日常脑活力管理。`
-                  : selectedPatient.risk === 'scd'
+                  : patientRisk === 'scd'
                   ? `检测提示 ${selectedPatient.name} 存在轻微的主观认知疲劳，建议合理休息，补充脑健康膳食，避免连续高强度用脑。`
                   : `检测提示 ${selectedPatient.name} 存在轻度认知减退倾向，建议开启社区非药物干预（如双重任务认知训练与膳食调理），并定期复测脑健康。`
                 }

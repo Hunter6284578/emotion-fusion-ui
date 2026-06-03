@@ -183,8 +183,14 @@ export default function Dashboard() {
     } else {
       setImmersiveMode(false)
     }
-    return () => setImmersiveMode(false)
   }, [sopStep, gameMode, setImmersiveMode])
+
+  // 组件卸载时安全还原非沉浸态
+  useEffect(() => {
+    return () => {
+      setImmersiveMode(false)
+    }
+  }, [setImmersiveMode])
 
   // ASR cleanup
   useEffect(() => {

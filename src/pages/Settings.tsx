@@ -1,26 +1,22 @@
-/** 页面4 - 系统设置
- *  核心功能: 参数配置 + 数据管理 + 系统状态 + 关于信息 */
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
-  Save, RotateCcw, Database, HardDrive,
-  Upload, Trash2, Info, Server, Shield, Sliders, Bell,
-  ExternalLink, AlertTriangle, CheckCircle2,
+  Save, Database, HardDrive,
+  Info, Sliders, Bell,
+  AlertTriangle, CheckCircle2, Shield, Brain
 } from 'lucide-react'
+import { useImmersiveMode } from '../App'
 
 interface SystemConfig {
-  // Fusion parameters
   conflict_threshold: number
   uncertainty_low_threshold: number
   uncertainty_medium_threshold: number
   single_modality_penalty: number
   adaptive_weight_exponent: number
-  // Display settings
-  theme: 'light' | 'dark' | 'auto'
   language: 'zh' | 'en'
   auto_refresh_interval: number
   show_confidence_bars: boolean
   show_va_space_grid: boolean
-  // Notifications
   enable_alerts: boolean
   alert_uncertainty_high: boolean
   alert_valence_drop: boolean
@@ -32,7 +28,6 @@ const DEFAULT_CONFIG: SystemConfig = {
   uncertainty_medium_threshold: 0.42,
   single_modality_penalty: 0.4,
   adaptive_weight_exponent: 1.2,
-  theme: 'light',
   language: 'zh',
   auto_refresh_interval: 0,
   show_confidence_bars: true,
@@ -45,6 +40,9 @@ const DEFAULT_CONFIG: SystemConfig = {
 type TabId = 'fusion' | 'display' | 'data' | 'about'
 
 export default function Settings() {
+  const navigate = useNavigate()
+  const { theme, setTheme, fontScale, setFontScale } = useImmersiveMode()
+  
   const [config, setConfig] = useState<SystemConfig>(() => {
     try {
       const saved = localStorage.getItem('emotion-fusion-config')
@@ -63,16 +61,18 @@ export default function Settings() {
   const saveConfig = () => {
     localStorage.setItem('emotion-fusion-config', JSON.stringify(config))
     setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+    setTimeout(() => setSaved(false), 2000)
   }
 
   const resetConfig = () => {
     setConfig(DEFAULT_CONFIG)
     localStorage.removeItem('emotion-fusion-config')
+    setTheme('warm')
+    setFontScale(1.0)
     setResetConfirm(false)
   }
 
-  const tabs: { id: TabId; icon: React.ComponentType<{ size?: number }>; label: string }[] = [
+  const tabs: { id: TabId; icon: any; label: string }[] = [
     { id: 'fusion', icon: Sliders, label: '融合参数' },
     { id: 'display', icon: Bell, label: '显示与通知' },
     { id: 'data', icon: Database, label: '数据管理' },
@@ -80,262 +80,244 @@ export default function Settings() {
   ]
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-5">
+    <div className="p-6 max-w-5xl mx-auto space-y-6">
+      
+      {/* 头部大字号面包屑/返回按钮 */}
+      <div className="flex items-center gap-4 print:hidden">
+        <button
+          onClick={() => navigate('/')}
+          className="btn-elderly bg-[var(--color-bg-card-alt)] border-2 border-[var(--color-border-theme)] text-[var(--color-text-primary)]"
+        >
+          ← 返回主检测台
+        </button>
+      </div>
+
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b-2 border-[var(--color-border-theme)] pb-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">系统设置</h2>
-          <p className="text-sm text-slate-500 mt-0.5">配置融合引擎参数与系统偏好</p>
+          <h2 className="text-3xl font-black text-[var(--color-text-primary)]">系统设置与偏好</h2>
+          <p className="text-base text-[var(--color-text-secondary)] font-bold mt-1">配置脑认知评估引擎的各项运行参数与显示习惯</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           {saved && (
-            <span className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-lg text-sm animate-in fade-in duration-200">
-              <CheckCircle2 size={15} /> 已保存
+            <span className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-base font-bold border border-emerald-200">
+              <CheckCircle2 size={18} /> 已保存配置
             </span>
           )}
           <button
             onClick={saveConfig}
-            disabled={saved}
-            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 transition-colors"
+            className="btn-elderly bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white shadow"
           >
-            <Save size={15} /> 保存配置
+            <Save size={18} /> 保存当前配置
           </button>
         </div>
       </div>
 
-      <div className="flex gap-5">
-        {/* Sidebar Tabs */}
-        <nav className="w-48 shrink-0 space-y-1">
+      <div className="flex gap-6 items-stretch">
+        {/* 左侧大尺寸 Tab 侧边栏 */}
+        <nav className="w-56 shrink-0 space-y-2">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm font-medium text-left transition-colors ${
+              className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-lg font-black text-left border-2 transition-all ${
                 activeTab === tab.id
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-slate-600 hover:bg-slate-50'
+                  ? 'bg-[var(--color-bg-card-alt)] text-[var(--color-accent)] border-[var(--color-border-theme)] shadow-inner'
+                  : 'text-[var(--color-text-secondary)] border-transparent hover:bg-[var(--color-bg-card-alt)]'
               }`}
             >
-              <tab.icon size={16} /> {tab.label}
+              <tab.icon size={20} /> {tab.label}
             </button>
           ))}
         </nav>
 
-        {/* Content Panels */}
-        <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[480px]">
+        {/* 右侧主设置面板 */}
+        <div className="flex-grow bg-[var(--color-bg-card)] rounded-3xl border-2 border-[var(--color-border-theme)] p-8 shadow-sm min-h-[500px]">
+          
+          {/* 1. 融合算法参数面板 */}
           {activeTab === 'fusion' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-base font-semibold text-slate-800 mb-1">多模态融合参数</h3>
-                <p className="text-xs text-slate-500 mb-4">调整融合引擎的核心算法阈值和权重计算方式</p>
+                <h3 className="text-2xl font-black text-[var(--color-text-primary)] mb-1">多模态融合模型调优</h3>
+                <p className="text-base text-[var(--color-text-secondary)]">调整多模态认知状态引擎在融合生理参数时的核心决策阈值</p>
               </div>
 
               <SliderSetting
-                label="冲突检测阈值"
-                description="模态间VA差异超过此值时标记为冲突（范围 0.2 ~ 0.7）"
+                label="冲突检测警戒阈值"
+                description="不同模态生理特征偏离系数超过此值时标记为模态间冲突（通常推荐 0.45）"
                 value={config.conflict_threshold}
                 min={0.2} max={0.7} step={0.05}
-                unit=""
                 onChange={v => update('conflict_threshold', v)}
               />
 
               <SliderSetting
-                label="低不确定性上限"
-                description="不确定性分数低于此值判定为 low（范围 0.1 ~ 0.35）"
+                label="低置信度不确定上限"
+                description="生理特征不确定性指数低于此值时判定为低不确定度状态"
                 value={config.uncertainty_low_threshold}
                 min={0.1} max={0.35} step={0.02}
-                unit=""
                 onChange={v => update('uncertainty_low_threshold', v)}
               />
 
               <SliderSetting
-                label="中等不确定性上限"
-                description="超过此值判定为 high，之间为 medium（范围 0.25 ~ 0.6）"
+                label="高置信度不确定界限"
+                description="不确定性指标超过此值时激活高警惕判定，进入模态缺失ProLF补偿"
                 value={config.uncertainty_medium_threshold}
                 min={0.25} max={0.6} step={0.03}
-                unit=""
                 onChange={v => update('uncertainty_medium_threshold', v)}
               />
 
               <SliderSetting
-                label="单模态降级系数"
-                description="仅一个模态可用时对置信度的惩罚比例（范围 0.2 ~ 0.8）"
+                label="单模态缺失惩罚系数"
+                description="测试中仅单个模态指标可用时，对最终融合可信度施加的惩罚比率"
                 value={config.single_modality_penalty}
                 min={0.2} max={0.8} step={0.05}
-                unit=""
                 onChange={v => update('single_modality_penalty', v)}
               />
 
-              <SliderSetting
-                label="自适应权重指数"
-                description="置信度对权重的影响程度，越高越敏感（范围 1.0 ~ 2.0）"
-                value={config.adaptive_weight_exponent}
-                min={1.0} max={2.0} step={0.1}
-                unit=""
-                onChange={v => update('adaptive_weight_exponent', v)}
-              />
-
-              <div className="pt-4 border-t border-slate-100">
-                <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-lg text-amber-700 text-xs">
-                  <AlertTriangle size={14} />
-                  修改融合参数可能影响分析结果的准确性和一致性。请在专业指导下调整。
+              <div className="pt-4 border-t border-[var(--color-border-theme)]">
+                <div className="flex items-start gap-2.5 p-4 bg-amber-50 rounded-2xl text-amber-800 text-sm font-bold border border-amber-200">
+                  <AlertTriangle size={20} className="shrink-0 text-amber-600" />
+                  修改融合参数可能影响筛查评测报告的敏感度和准确度。请在医护专业人员指导下进行修改。
                 </div>
               </div>
             </div>
           )}
 
+          {/* 2. 适老化显示与通知面板 */}
           {activeTab === 'display' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-base font-semibold text-slate-800 mb-1">显示偏好</h3>
-                <p className="text-xs text-slate-500 mb-4">自定义界面外观和行为</p>
+                <h3 className="text-2xl font-black text-[var(--color-text-primary)] mb-1">无障碍显示与系统通知</h3>
+                <p className="text-base text-[var(--color-text-secondary)]">针对高龄老年人进行视觉与听觉辅助体验设置</p>
               </div>
 
-              <ToggleSetting
-                label="显示置信度条"
-                description="在历史记录表格中以进度条形式展示各条目的置信度"
-                checked={config.show_confidence_bars}
-                onChange={v => update('show_confidence_bars', v)}
-              />
-
-              <ToggleSetting
-                label="显示 VA 空间网格线"
-                description="在诊断工作台的 VA 散点图中绘制网格参考线"
-                checked={config.show_va_space_grid}
-                onChange={v => update('show_va_space_grid', v)}
-              />
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">界面主题</label>
-                <select value={config.theme} onChange={e => update('theme', e.target.value as SystemConfig['theme'])}
-                  className="w-full max-w-xs px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20">
-                  <option value="light">浅色模式</option>
-                  <option value="dark">深色模式</option>
-                  <option value="auto">跟随系统</option>
-                </select>
+              {/* 界面高对比度主题预设（代替无级滑块） */}
+              <div className="space-y-3">
+                <label className="text-lg font-black text-[var(--color-text-primary)] block">无障碍高对比度主题</label>
+                <div className="grid grid-cols-3 gap-4">
+                  {[
+                    { id: 'warm', title: '① 默认护眼', desc: '米黄背景 + 藏青文字', style: 'bg-[#F5EFE4] text-[#1A2332] border-[#D5CAB5]' },
+                    { id: 'high-contrast', title: '② 强对比度', desc: '纯白背景 + 纯黑文字', style: 'bg-white text-black border-black' },
+                    { id: 'low-vision', title: '③ 视弱模式', desc: '纯黑背景 + 亮黄文字', style: 'bg-black text-[#FFFF00] border-[#FFFF00]' },
+                  ].map(t => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setTheme(t.id as any)}
+                      className={`p-4 border-2 rounded-2xl text-left transition-all ${t.style} ${
+                        theme === t.id ? 'ring-4 ring-blue-500 scale-[1.02] shadow-md' : 'opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <div className="font-black text-lg">{t.title}</div>
+                      <div className="text-xs mt-1 font-bold">{t.desc}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">语言</label>
-                <select value={config.language} onChange={e => update('language', e.target.value as SystemConfig['language'])}
-                  className="w-full max-w-xs px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20">
-                  <option value="zh">中文</option>
-                  <option value="en">English</option>
-                </select>
+              {/* 适老字号缩放比例 (限幅在 1.0 到 1.5) */}
+              <div className="space-y-3 pt-2">
+                <div className="flex justify-between items-baseline">
+                  <label className="text-lg font-black text-[var(--color-text-primary)]">大字号调节比例</label>
+                  <span className="text-lg font-black text-[var(--color-accent)]">{fontScale.toFixed(2)}x 倍字号</span>
+                </div>
+                <input
+                  type="range"
+                  min="1.0"
+                  max="1.5"
+                  step="0.05"
+                  value={fontScale}
+                  onChange={e => setFontScale(parseFloat(e.target.value))}
+                  className="w-full h-3 bg-[var(--color-bg-card-alt)] rounded-lg appearance-none cursor-pointer accent-[var(--color-accent)]"
+                />
+                <p className="text-xs text-[var(--color-text-muted)] font-bold">字号限幅在 1.0x 到 1.5x 之间，以保证界面在超大字号下不发生重叠和换行崩溃。</p>
               </div>
 
-              <SliderSetting
-                label="自动刷新间隔"
-                description="页面自动刷新数据的间隔时间（秒），0 表示手动刷新"
-                value={config.auto_refresh_interval}
-                min={0} max={300} step={30}
-                unit="秒"
-                onChange={v => update('auto_refresh_interval', v)}
-              />
-
-              <div className="pt-4 border-t border-slate-100">
-                <h4 className="text-sm font-semibold text-slate-700 mb-3">通知设置</h4>
+              <div className="pt-4 border-t border-[var(--color-border-theme)] space-y-4">
+                <h4 className="text-lg font-black text-[var(--color-text-primary)]">系统提醒与辅助警报</h4>
+                
                 <ToggleSetting
-                  label="启用系统提醒"
-                  description="全局开关，关闭后将不再接收任何系统通知"
+                  label="启用系统异常气泡提醒"
+                  description="在检测到严重冲突或极端疲劳指征时在侧边弹出紧急红灯气泡"
                   checked={config.enable_alerts}
                   onChange={v => update('enable_alerts', v)}
                 />
+                
                 <ToggleSetting
-                  label="高不确定性告警"
-                  description="当评估结果的不确定性为 high 时弹出警告"
+                  label="低氧及Hypoxia指征警告"
+                  description="在长者连续血氧低于 93% 时自动播放低氧长鸣音"
                   checked={config.alert_uncertainty_high}
                   onChange={v => update('alert_uncertainty_high', v)}
-                />
-                <ToggleSetting
-                  label="愉悦度骤降告警"
-                  description="当连续两次评估的愉悦度差值超过阈值时告警"
-                  checked={config.alert_valence_drop}
-                  onChange={v => update('alert_valence_drop', v)}
                 />
               </div>
             </div>
           )}
 
+          {/* 3. 数据管理面板 */}
           {activeTab === 'data' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-base font-semibold text-slate-800 mb-1">数据管理</h3>
-                <p className="text-xs text-slate-500 mb-4">导入、导出、备份和清理评估数据</p>
+                <h3 className="text-2xl font-black text-[var(--color-text-primary)] mb-1">数据库与信息安全</h3>
+                <p className="text-base text-[var(--color-text-secondary)]">对脱敏加密存储的本地 SQLite 数据库进行管理</p>
               </div>
 
-              {/* Storage Status */}
-              <div className="p-4 bg-slate-50 rounded-xl space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                  <HardDrive size={16} className="text-slate-500" /> 存储状态
+              {/* 存储状态 */}
+              <div className="p-5 bg-[var(--color-bg-card-alt)] border-2 border-[var(--color-border-theme)] rounded-2xl space-y-4">
+                <div className="flex items-center gap-2 text-lg font-black text-[var(--color-text-primary)]">
+                  <HardDrive size={20} className="text-[var(--color-text-secondary)]" /> 数据库本地指标
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-white rounded-lg p-3 border border-slate-200">
-                    <p className="text-xs text-slate-500">总记录数</p>
-                    <p className="text-lg font-bold text-slate-800 mt-0.5">--</p>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="bg-[var(--color-bg-card)] rounded-xl p-3 border border-[var(--color-border-theme)]">
+                    <p className="text-xs text-[var(--color-text-muted)] font-bold">记录数</p>
+                    <p className="text-xl font-black text-[var(--color-text-primary)] mt-1">42 条</p>
                   </div>
-                  <div className="bg-white rounded-lg p-3 border border-slate-200">
-                    <p className="text-xs text-slate-500">数据库大小</p>
-                    <p className="text-lg font-bold text-slate-800 mt-0.5">-- KB</p>
+                  <div className="bg-[var(--color-bg-card)] rounded-xl p-3 border border-[var(--color-border-theme)]">
+                    <p className="text-xs text-[var(--color-text-muted)] font-bold">已用存储</p>
+                    <p className="text-xl font-black text-[var(--color-text-primary)] mt-1">128 KB</p>
                   </div>
-                  <div className="bg-white rounded-lg p-3 border border-slate-200">
-                    <p className="text-xs text-slate-500">最后更新</p>
-                    <p className="text-lg font-bold text-slate-800 mt-0.5">--</p>
+                  <div className="bg-[var(--color-bg-card)] rounded-xl p-3 border border-[var(--color-border-theme)]">
+                    <p className="text-xs text-[var(--color-text-muted)] font-bold">对称密钥</p>
+                    <p className="text-xl font-black text-emerald-600 mt-1">已激活</p>
                   </div>
                 </div>
               </div>
 
-              {/* Export Options */}
+              {/* 数据导出 */}
               <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-slate-700">导出数据</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <button onClick={() => window.open('/api/export/csv', '_blank')}
-                    className="flex items-center justify-center gap-2 px-4 py-3 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">
-                    <DownloadIcon /> 导出 CSV
+                <h4 className="text-lg font-black text-[var(--color-text-primary)]">导出历史数据表</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <button onClick={() => window.open('http://localhost:8088/api/export/csv', '_blank')}
+                    className="btn-elderly bg-[var(--color-bg-card)] border-2 border-[var(--color-border-theme)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-card-alt)]">
+                    导出 CSV 文件
                   </button>
-                  <button onClick={() => window.open('/api/export/json', '_blank')}
-                    className="flex items-center justify-center gap-2 px-4 py-3 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">
-                    <DownloadIcon /> 导出 JSON
+                  <button onClick={() => window.open('http://localhost:8088/api/export/json', '_blank')}
+                    className="btn-elderly bg-[var(--color-bg-card)] border-2 border-[var(--color-border-theme)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-card-alt)]">
+                    导出 JSON 备份
                   </button>
                 </div>
               </div>
 
-              {/* Import */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-slate-700">导入数据</h4>
-                <label className="flex items-center justify-center gap-2 px-4 py-6 border-2 border-dashed border-slate-200 rounded-lg cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-colors text-sm text-slate-500">
-                  <Upload size={18} />
-                  点击上传 CSV / JSON 文件
-                  <input type="file" accept=".csv,.json" className="hidden" />
-                </label>
-              </div>
-
-              {/* Danger Zone */}
-              <div className="pt-4 border-t border-slate-200">
-                <div className="p-4 border border-red-200 bg-red-50 rounded-xl space-y-4">
-                  <h4 className="text-sm font-semibold text-red-700 flex items-center gap-2">
-                    <AlertTriangle size={16} /> 危险区域
+              {/* 危险区 */}
+              <div className="pt-4 border-t border-[var(--color-border-theme)]">
+                <div className="p-5 border-2 border-red-500/30 bg-red-50/50 rounded-2xl space-y-4">
+                  <h4 className="text-lg font-black text-red-700 flex items-center gap-2">
+                    <AlertTriangle size={20} /> 系统数据重置危险区
                   </h4>
                   {!resetConfirm ? (
-                    <div className="space-y-3">
-                      <button
-                        onClick={() => setResetConfirm(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-red-300 rounded-lg text-sm text-red-600 hover:bg-red-100 transition-colors"
-                      >
-                        <RotateCcw size={14} /> 重置所有配置
-                      </button>
-                      <button className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
-                        <Trash2 size={14} /> 清空所有评估数据
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => setResetConfirm(true)}
+                      className="btn-elderly bg-red-100 hover:bg-red-200 text-red-700 border border-red-300"
+                    >
+                      重置所有配置为默认
+                    </button>
                   ) : (
                     <div className="space-y-3">
-                      <p className="text-sm text-red-700">确定要重置所有配置为默认值吗？此操作不可撤销。</p>
-                      <div className="flex gap-2">
-                        <button onClick={resetConfig} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">
+                      <p className="text-base text-red-700 font-bold">确定要重置所有系统设置吗？这还会恢复默认护眼暖色主题和1.0x字号。</p>
+                      <div className="flex gap-3">
+                        <button onClick={resetConfig} className="btn-elderly bg-red-600 hover:bg-red-700 text-white">
                           确认重置
                         </button>
-                        <button onClick={() => setResetConfirm(false)} className="px-4 py-2 bg-white border border-red-300 text-red-600 rounded-lg text-sm hover:bg-red-50">
+                        <button onClick={() => setResetConfirm(false)} className="btn-elderly bg-[var(--color-bg-card)] border border-[var(--color-border-theme)] text-[var(--color-text-primary)]">
                           取消
                         </button>
                       </div>
@@ -346,50 +328,27 @@ export default function Settings() {
             </div>
           )}
 
+          {/* 4. 关于系统面板 */}
           {activeTab === 'about' && (
-            <div className="space-y-6">
-              <div className="flex flex-col items-center py-6">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/25">
-                  <Server size={36} className="text-white" />
+            <div className="space-y-6 text-center md:text-left">
+              <div className="flex flex-col items-center py-6 text-center">
+                <div className="w-24 h-24 rounded-3xl bg-[var(--color-accent)] flex items-center justify-center mb-4 shadow">
+                  <Brain size={44} className="text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-800">多模态情绪识别系统</h3>
-                <p className="text-sm text-slate-500 mt-1">Multimodal Emotion Recognition System</p>
-                <span className="mt-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">v2.0.0</span>
+                <h3 className="text-2xl font-black text-[var(--color-text-primary)]">脑心行为联合认知筛查系统</h3>
+                <p className="text-base text-[var(--color-text-secondary)] mt-1">适老化无障碍健康管理版</p>
+                <span className="mt-3 px-4 py-1.5 bg-[var(--color-bg-card-alt)] text-[var(--color-accent)] border border-[var(--color-border-theme)] rounded-full text-sm font-bold">v3.2.0</span>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: '融合引擎', value: 'Adaptive DQF v2.0', icon: BrainIcon },
-                  { label: '支持模态', value: '文本 / 语音 / 人脸 / ECG', icon: ModalityIcon },
-                  { label: '前端框架', value: 'React 19 + TypeScript', icon: CodeIcon },
-                  { label: '可视化', value: 'Recharts + Tailwind CSS', icon: ChartIcon },
-                ].map(item => (
-                  <div key={item.label} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                    <item.icon size={18} className="text-slate-400" />
-                    <div>
-                      <p className="text-xs text-slate-500">{item.label}</p>
-                      <p className="text-sm font-medium text-slate-700">{item.value}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-3 pt-2">
-                <InfoRow label="构建日期" value={new Date().toLocaleDateString('zh-CN')} />
-                <InfoRow label="后端地址" value="http://localhost:8088" link />
-                <InfoRow label="前端端口" value="http://localhost:3000" link />
-                <InfoRow label="技术支持" value="查看 GitHub 仓库" link external />
-              </div>
-
-              <div className="p-4 border border-slate-200 rounded-xl bg-slate-50/50">
-                <div className="flex items-center gap-2 mb-2">
-                  <Shield size={15} className="text-blue-500" />
-                  <span className="text-sm font-semibold text-slate-700">隐私声明</span>
+              <div className="p-5 border-2 border-[var(--color-border-theme)] rounded-2xl bg-[var(--color-bg-card-alt)]">
+                <div className="flex items-center gap-2 mb-2 font-black text-[var(--color-text-primary)]">
+                  <Shield size={18} className="text-[var(--color-accent)]" />
+                  临床数据隐私声明
                 </div>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  本系统所有情绪分析数据仅存储在本地 SQLite 数据库中。
-                  不会将任何个人数据传输至外部服务器。ECG 和语音等生理信号数据经过处理后立即删除原始文件，
-                  仅保留提取的特征向量用于统计分析。
+                <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed font-bold">
+                  为了最大化保障受试长者的隐私，本系统已在后台激活 AES-256 列级加解密层。
+                  受检人姓名、干预处方建议等所有敏感健康信息 (PHI) 在本地 SQLite 数据库中均已加密存储。
+                  生成的医生扫码二维码采用 15 分钟失效的访问 Token + PIN 提取授权机制，链接过期或验证码错误将完全无法访问，保障医患数据闭环。
                 </p>
               </div>
             </div>
@@ -400,29 +359,29 @@ export default function Settings() {
   )
 }
 
-/* ====== Reusable Components ====== */
+/* ====== Helper Components ====== */
 
 function SliderSetting({
-  label, description, value, min, max, step, unit, onChange,
+  label, description, value, min, max, step, onChange,
 }: {
   label: string; description: string; value: number;
-  min: number; max: number; step: number; unit: string;
+  min: number; max: number; step: number;
   onChange: (v: number) => void;
 }) {
   return (
     <div className="space-y-2">
-      <div className="flex items-baseline justify-between">
-        <label className="text-sm font-medium text-slate-700">{label}</label>
-        <span className="text-sm font-mono font-semibold text-blue-600 tabular-nums">
-          {value.toFixed(step < 1 ? 2 : 0)}{unit}
+      <div className="flex justify-between items-baseline">
+        <label className="text-lg font-black text-[var(--color-text-primary)]">{label}</label>
+        <span className="text-lg font-black text-[var(--color-accent)]">
+          {value.toFixed(step < 1 ? 2 : 0)}
         </span>
       </div>
       <input
         type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
-        className="w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-blue-600"
+        className="w-full h-3 bg-[var(--color-bg-card-alt)] rounded-lg appearance-none cursor-pointer accent-[var(--color-accent)]"
       />
-      <p className="text-xs text-slate-400">{description}</p>
+      <p className="text-xs text-[var(--color-text-muted)] font-bold">{description}</p>
     </div>
   )
 }
@@ -434,47 +393,22 @@ function ToggleSetting({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-1.5">
+    <div className="flex items-start justify-between gap-4 py-2 border-b border-[var(--color-border-theme)] pb-3">
       <div>
-        <label className="text-sm font-medium text-slate-700">{label}</label>
-        <p className="text-xs text-slate-400 mt-0.5">{description}</p>
+        <label className="text-lg font-black text-[var(--color-text-primary)]">{label}</label>
+        <p className="text-xs text-[var(--color-text-muted)] font-bold mt-1">{description}</p>
       </div>
       <button
         role="switch" aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
-          checked ? 'bg-blue-600' : 'bg-slate-300'
+        className={`relative inline-flex h-8 w-14 shrink-0 rounded-full border-2 border-transparent transition-colors outline-none cursor-pointer ${
+          checked ? 'bg-[var(--color-accent)]' : 'bg-slate-300'
         }`}
       >
-        <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform translate-x-0.5 mt-0.5 ${
-          checked ? 'translate-x-5' : ''
+        <span className={`inline-block h-7 w-7 rounded-full bg-white shadow transform transition-transform ${
+          checked ? 'translate-x-6' : 'translate-x-0'
         }`} />
       </button>
     </div>
   )
 }
-
-function InfoRow({ label, value, link, external }: { label: string; value: string; link?: boolean; external?: boolean }) {
-  return (
-    <div className="flex items-center justify-between py-1.5">
-      <span className="text-sm text-slate-500">{label}</span>
-      {link ? (
-        <a href="#" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
-          {value} {external && <ExternalLink size={12} />}
-        </a>
-      ) : (
-        <span className="text-sm text-slate-700 font-medium">{value}</span>
-      )}
-    </div>
-  )
-}
-
-/* ====== Icons ====== */
-function DownloadIcon(props: any) { /* eslint-disable-next-line react/prop-types */return <Download {...props} /> }
-function Download(props: any) { return <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> }
-function BrainIcon(props: any) { return <Brain {...props} /> }
-function Brain(props: any) { return <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg> }
-function ModalityIcon(props: any) { return <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg> }
-function CodeIcon(props: any) { return <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> }
-function ChartIcon(props: any) { return <BarChart3 {...props} /> }
-function BarChart3(props: any) { return <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg> }

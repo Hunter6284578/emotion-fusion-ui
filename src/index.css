@@ -1,14 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --primary: #0EA5E9;
-  --primary-dark: #0369A1;
-  --secondary: #06B6D4;
-  --success: #10B981;
-  --warning: #F59E0B;
-  --danger: #EF4444;
+  /* 全局字号缩放比例，默认 1.0 */
+  --font-scale: 1.0;
   
-  /* Emotion colors */
+  /* 适老化尺寸 */
+  --btn-min-height: 52px;
+  --btn-min-touch: 48px;
+  --radius-lg: 16px;
+  --spacing-card: 24px;
+  
+  /* 情绪原始配色（向后兼容） */
   --emotion-happy: #22C55E;
   --emotion-calm: #3B82F6;
   --emotion-sad: #6366F1;
@@ -16,6 +18,77 @@
   --emotion-fear: #F97316;
   --emotion-surprised: #A855F7;
   --emotion-disgust: #78716C;
+}
+
+/* 1. 默认护眼主题 (暖灰/米黄底 + 深藏青字) */
+:root, .theme-warm {
+  --color-bg-primary: #F5EFE4;      /* 米黄/暖色主背景 */
+  --color-bg-card: #FFFDF9;         /* 暖白卡片背景 */
+  --color-bg-card-alt: #EDE5D5;     /* 次级深暖灰背景 */
+  --color-text-primary: #1A2332;    /* 深藏青主文字 */
+  --color-text-secondary: #424D5E;  /* 辅助文字 */
+  --color-text-muted: #6E798A;      /* 较浅文字 */
+  --color-accent: #2563EB;          /* 强调蓝 */
+  --color-accent-hover: #1D4ED8;
+  --color-border-theme: #D5CAB5;    /* 暖色边框 */
+  
+  /* 四色状态灯 */
+  --color-status-green: #15803D;    /* 优良 */
+  --color-status-light-yellow: #B45309; /* 关注 */
+  --color-status-yellow: #D97706;   /* 轻度减退 */
+  --color-status-red: #B91C1C;      /* 专科评估 */
+  
+  /* VA 象限填充色 */
+  --va-quadrant-bg-tl: rgba(185, 28, 28, 0.05);
+  --va-quadrant-bg-tr: rgba(21, 128, 61, 0.05);
+  --va-quadrant-bg-bl: rgba(99, 102, 241, 0.05);
+  --va-quadrant-bg-br: rgba(59, 130, 246, 0.05);
+}
+
+/* 2. 强对比度主题 (纯白底 + 纯黑字) */
+.theme-high-contrast {
+  --color-bg-primary: #FFFFFF;
+  --color-bg-card: #FFFFFF;
+  --color-bg-card-alt: #F3F4F6;
+  --color-text-primary: #000000;
+  --color-text-secondary: #111827;
+  --color-text-muted: #374151;
+  --color-accent: #000000;
+  --color-accent-hover: #1F2937;
+  --color-border-theme: #000000;
+  
+  --color-status-green: #006400;
+  --color-status-light-yellow: #8B8000;
+  --color-status-yellow: #FF8C00;
+  --color-status-red: #8B0000;
+  
+  --va-quadrant-bg-tl: rgba(0, 0, 0, 0.03);
+  --va-quadrant-bg-tr: rgba(0, 0, 0, 0.03);
+  --va-quadrant-bg-bl: rgba(0, 0, 0, 0.03);
+  --va-quadrant-bg-br: rgba(0, 0, 0, 0.03);
+}
+
+/* 3. 视弱模式主题 (黑底 + 亮黄字) */
+.theme-low-vision {
+  --color-bg-primary: #000000;
+  --color-bg-card: #000000;
+  --color-bg-card-alt: #1F2937;
+  --color-text-primary: #FFFF00;    /* 亮黄色 */
+  --color-text-secondary: #FFFF7F;  /* 辅助亮黄 */
+  --color-text-muted: #E5E500;
+  --color-accent: #FFFF00;
+  --color-accent-hover: #FBBF24;
+  --color-border-theme: #FFFF00;
+  
+  --color-status-green: #00FF00;    /* 鲜绿 */
+  --color-status-light-yellow: #FFFF00; /* 亮黄 */
+  --color-status-yellow: #FFA500;   /* 橙黄 */
+  --color-status-red: #FF0000;      /* 鲜红 */
+  
+  --va-quadrant-bg-tl: rgba(255, 0, 0, 0.15);
+  --va-quadrant-bg-tr: rgba(0, 255, 0, 0.15);
+  --va-quadrant-bg-bl: rgba(255, 255, 255, 0.1);
+  --va-quadrant-bg-br: rgba(0, 255, 255, 0.15);
 }
 
 * {
@@ -27,38 +100,74 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
     'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-  background-color: #f8fafc;
-  color: #1e293b;
-  line-height: 1.6;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  line-height: 1.8;
+  font-size: calc(18px * var(--font-scale, 1.0));
+  transition: background-color 0.2s, color 0.2s;
 }
 
-/* Custom scrollbar */
+/* 适老化按钮与触控区域全局类 */
+.btn-elderly {
+  min-height: var(--btn-min-height);
+  padding: 12px 24px;
+  font-size: calc(18px * var(--font-scale, 1.0));
+  border-radius: var(--radius-lg);
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.input-elderly {
+  min-height: var(--btn-min-height);
+  font-size: calc(18px * var(--font-scale, 1.0));
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 2px solid var(--color-border-theme);
+  background-color: var(--color-bg-card);
+  color: var(--color-text-primary);
+}
+
+/* 等比例字号适配 */
+h1 { font-size: calc(28px * var(--font-scale, 1.0)); font-weight: 800; }
+h2 { font-size: calc(24px * var(--font-scale, 1.0)); font-weight: 700; }
+h3 { font-size: calc(20px * var(--font-scale, 1.0)); font-weight: 700; }
+h4 { font-size: calc(18px * var(--font-scale, 1.0)); font-weight: 600; }
+p, span, div, li { font-size: calc(18px * var(--font-scale, 1.0)); }
+
+/* 适老化加宽滚动条 */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 12px;
+  height: 12px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--color-bg-card-alt);
 }
 ::-webkit-scrollbar-thumb {
-  background: #94a3b8;
-  border-radius: 3px;
+  background: var(--color-text-muted);
+  border-radius: 6px;
+  border: 3px solid var(--color-bg-primary);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: var(--color-text-secondary);
 }
 
-/* VA Space quadrant backgrounds */
-.va-quadrant-tl { fill: rgba(239, 68, 68, 0.08); }   /* fear */
-.va-quadrant-tr { fill: rgba(34, 197, 94, 0.08); }    /* happy */
-.va-quadrant-bl { fill: rgba(99, 102, 241, 0.08); }    /* sad */
-.va-quadrant-br { fill: rgba(59, 130, 246, 0.08); }    /* calm */
+/* VA 象限背景色 */
+.va-quadrant-tl { fill: var(--va-quadrant-bg-tl); }
+.va-quadrant-tr { fill: var(--va-quadrant-bg-tr); }
+.va-quadrant-bl { fill: var(--va-quadrant-bg-bl); }
+.va-quadrant-br { fill: var(--va-quadrant-bg-br); }
 
-/* Animations */
+/* 呼吸动画效果 */
 @keyframes pulse-ring {
   0% { transform: scale(1); opacity: 0.8; }
   100% { transform: scale(2); opacity: 0; }
 }
-
 .animate-pulse-ring {
   animation: pulse-ring 2s ease-out infinite;
 }
@@ -67,12 +176,81 @@ body {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
 .animate-fade-in-up {
   animation: fade-in-up 0.3s ease-out forwards;
 }
 
-.text-yellow-750 {
-  color: #b45309;
-}
+/* 打印样式适配 */
+@media print {
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12pt !important;
+  }
+  
+  /* 隐藏所有不必要的交互性控件 */
+  .no-print, 
+  .print-hide, 
+  nav, 
+  button, 
+  header, 
+  .tab-bar, 
+  aside,
+  .print-action-btn, 
+  .theme-toggle-btn,
+  .professional-switch-container {
+    display: none !important;
+  }
 
+  /* 铺满纸张 */
+  .print-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 10mm !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+  }
+
+  /* 卡片打印排版还原为高对比度线框 */
+  .card, .print-card {
+    border: 1.5px solid #000000 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border-radius: 4px !important;
+    margin-bottom: 10px !important;
+    padding: 15px !important;
+    page-break-inside: avoid;
+  }
+
+  /* 黑白高对比度文字 */
+  body, p, span, div, h1, h2, h3, h4, li, a {
+    color: #000000 !important;
+  }
+
+  /* 状态徽章高对比度打印表现 */
+  .badge-status {
+    border: 2px solid #000000 !important;
+    background: #f3f4f6 !important;
+    color: #000000 !important;
+    font-weight: bold !important;
+  }
+
+  /* 进度条在打印时的黑白填充 */
+  .progress-bar-fill {
+    background-color: #000000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .progress-bar-track {
+    background-color: #e5e7eb !important;
+    border: 1px solid #000000 !important;
+  }
+
+  /* 防止雷达图、趋势图等在打印时被拦腰截断 */
+  .chart-container, svg {
+    page-break-inside: avoid;
+  }
+}
